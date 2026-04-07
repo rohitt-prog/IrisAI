@@ -1,0 +1,13 @@
+{
+  "class_names": [
+    "Cataract",
+    "Diabetic_Retinopathy",
+    "Glaucoma",
+    "Keratoconus",
+    "Normal",
+    "Uveitis"
+  ],
+  "num_classes": 6,
+  "model": "efficientnet_b3",
+  "accuracy": 0.9459
+}
