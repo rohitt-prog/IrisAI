@@ -1,4 +1,4 @@
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import Logo from './Logo';
 import { useTokens } from '../context/TokenContext';
 import GoldCoin from './GoldCoin';
@@ -17,7 +17,6 @@ const getTokenStyle = (count) => {
 };
 
 const Navbar = () => {
-  const navigate = useNavigate();
   const location = useLocation();
   const token = localStorage.getItem('token');
   const { tokens } = useTokens();

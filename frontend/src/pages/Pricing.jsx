@@ -246,7 +246,6 @@ const Pricing = () => {
                   fontSize: '0.95rem',
                   fontFamily: 'Space Grotesk, sans-serif',
                   cursor: 'pointer',
-                  border: 'none',
                   transition: 'all 0.25s',
                   background: isPopular
                     ? 'linear-gradient(135deg, #0022cc, #0077ff, #00e5ff)'

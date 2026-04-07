@@ -22,6 +22,7 @@ export const TokenProvider = ({ children }) => {
 
   // Fetch on mount
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchTokens();
   }, [fetchTokens]);
 
@@ -38,4 +39,5 @@ export const TokenProvider = ({ children }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useTokens = () => useContext(TokenContext);
