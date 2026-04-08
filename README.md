@@ -31,7 +31,9 @@
 
 ```
 projectDeep/
+├── docker-compose.yml        # Multi-container Docker configuration
 ├── backend/                  # Flask API (Python)
+│   ├── Dockerfile            # Container build configuration
 │   ├── app.py                # App entry point, MongoDB & JWT setup
 │   ├── requirements.txt      # Python dependencies
 │   ├── .env.example          # Environment variable template
@@ -50,6 +52,7 @@ projectDeep/
 │       └── pdf_generator.py  # ReportLab PDF + QR code generation
 │
 ├── frontend/                 # React + Vite (JavaScript)
+│   ├── Dockerfile            # Nginx production container build
 │   └── src/
 │       ├── App.jsx           # Router & layout
 │       ├── config.js         # API base URL config
@@ -86,11 +89,33 @@ projectDeep/
 - **Python 3.9+**
 - **Node.js 18+** and **npm**
 - **MongoDB** (local or [Atlas free tier](https://www.mongodb.com/atlas))
+- **Docker Desktop** (Highly Recommended for easy setup)
 - **Google Gemini API Key** — get one free at [aistudio.google.com](https://aistudio.google.com/app/apikey)
 
 ---
 
-### 1. Clone & Configure
+### 🐳 1. Run with Docker (Recommended)
+
+The easiest way to run the entire stack (Frontend, Backend, and MongoDB) is using Docker:
+
+```bash
+git clone <your-repo-url>
+cd projectDeep
+cp backend/.env.example backend/.env
+# ⚠️ Edit backend/.env to add your GEMINI_API_KEY!
+
+docker compose up --build
+```
+
+- **Frontend:** `http://localhost:8080`
+- **Backend API:** `http://localhost:5001`
+- **Database:** Auto-configured locally `mongodb:27017`
+
+---
+
+### 💻 2. Manual Clone & Configure (Without Docker)
+
+If you'd rather run the servers manually:
 
 ```bash
 git clone <your-repo-url>
@@ -113,7 +138,7 @@ JWT_SECRET_KEY=change-this-to-a-long-random-string
 
 ---
 
-### 2. Backend Setup
+### 3. Backend Setup
 
 ```bash
 cd backend
@@ -129,7 +154,7 @@ The Flask API will start at **`http://localhost:5001`**.
 
 ---
 
-### 3. Frontend Setup
+### 4. Frontend Setup
 
 ```bash
 cd frontend
@@ -141,7 +166,7 @@ The React app will start at **`http://localhost:5173`**.
 
 ---
 
-### 4. One-Command Start (macOS/Linux)
+### 5. One-Command Start (macOS/Linux)
 
 ```bash
 chmod +x run.sh

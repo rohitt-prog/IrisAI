@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: irisai_backend
+    ports:
+      - "5001:5001"
+    environment:
+      - MONGO_URI=${MONGO_URI:-mongodb://mongodb:27017/iris_health}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your_jwt_secret}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/reports:/app/reports
+    depends_on:
+      - mongodb
+
+  frontend:
+    build: ./frontend
+    container_name: irisai_frontend
+    ports:
+      - "8080:80"
+    environment:
+      # If you need to override the API route in the future, set it here before building
+      - VITE_API_URL=http://localhost:5001/api
+    depends_on:
+      - backend
+
+  mongodb:
+    image: mongo:6.0
+    container_name: irisai_mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:

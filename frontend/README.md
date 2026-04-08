@@ -9,6 +9,10 @@ React + Vite frontend for the **Deep Learning Based Eye Health Monitoring System
 ## 🚀 Quick Start
 
 ```bash
+# Recommendation: use Docker from the root directory instead
+docker compose up --build
+
+# Or manually:
 npm install
 npm run dev     # Development server at http://localhost:5173
 npm run build   # Production build → dist/
