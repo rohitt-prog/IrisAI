@@ -1,4 +1,4 @@
-# 👁️ Iris Health AI — Deep Learning Based Eye Health Monitoring System
+# 👁️ IrisAI — Deep Learning Based Eye Health Monitoring System
 
 > **AI-powered anterior eye health screening** — upload an eye image, get an instant diagnosis and a downloadable clinical PDF report in under 30 seconds.
 
@@ -6,7 +6,7 @@
 
 ## 🌟 Overview
 
-**Iris Health AI** is a full-stack web application that uses deep learning to detect eye conditions from anterior eye segment images. It combines a PyTorch classification model with Google Gemini generative AI to provide plain-language explanations, and generates professional PDF reports with embedded QR codes — all behind a secure, JWT-authenticated interface.
+**IrisAI** is a full-stack web application that uses deep learning to detect eye conditions from anterior eye segment images. It combines a PyTorch classification model with Google Gemini generative AI to provide plain-language explanations, and generates professional PDF reports with embedded QR codes — all behind a secure, JWT-authenticated interface.
 
 > ⚠️ **Medical Disclaimer:** This system is for preliminary screening purposes only. It is NOT a substitute for professional medical diagnosis. Always consult a licensed ophthalmologist.
 
