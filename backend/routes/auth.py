@@ -16,6 +16,9 @@ def signup():
     if not email or not password:
         return jsonify({"message": "Missing email or password"}), 400
 
+    if len(password) < 8:
+        return jsonify({"message": "Password must be at least 8 characters long"}), 400
+
     db = current_app.db
     if db.users.find_one({"email": email}):
         return jsonify({"message": "User already exists"}), 400

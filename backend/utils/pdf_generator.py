@@ -93,9 +93,12 @@ def create_pdf_report(data, user_name):
         c.drawString(300, y, f"{k}:")
         c.drawRightString(width - 40, y, f"{v}")
         
-        # Progress bar representing probability
+        # Progress bar representing probability (probabilities are 0.0–1.0)
         try:
             val = float(str(v).replace('%', '').strip())
+            # Clamp to [0, 1] range (values come from model softmax output)
+            if val > 1.0:
+                val = val / 100.0
         except ValueError:
             val = 0
             
@@ -103,7 +106,7 @@ def create_pdf_report(data, user_name):
         c.setFillColor(colors.HexColor('#e2e8f0'))
         c.rect(width - 140, y - 1, bar_w, 6, fill=True, stroke=False)
         c.setFillColor(colors.HexColor('#3b82f6'))
-        c.rect(width - 140, y - 1, bar_w * (val / 100.0), 6, fill=True, stroke=False)
+        c.rect(width - 140, y - 1, bar_w * val, 6, fill=True, stroke=False)
         c.setFillColor(colors.HexColor('#475569'))
         
         y -= 14

@@ -16,12 +16,16 @@ from routes.tokens import tokens_bp
 
 load_dotenv()
 
+# Ensure upload folder exists at import time (works with gunicorn, not just __main__)
+os.makedirs('uploads', exist_ok=True)
+
 app = Flask(__name__)
 # Enable CORS for frontend on any port/origin
 CORS(app)
 
 app.config["MONGO_URI"] = os.getenv("MONGO_URI", "mongodb://localhost:27017/iris_health")
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "super-secret-key-12345")
+app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024  # 20 MB upload limit (matches UI)
 
 jwt = JWTManager(app)
 
@@ -58,6 +62,4 @@ app.register_blueprint(history_bp, url_prefix='/api/history')
 app.register_blueprint(tokens_bp, url_prefix='/api/tokens')
 
 if __name__ == '__main__':
-    # Ensure upload folder exists
-    os.makedirs('uploads', exist_ok=True)
     app.run(host='0.0.0.0', port=5001, debug=True)

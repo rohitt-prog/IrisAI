@@ -18,9 +18,12 @@ def download_report():
         
     user_name = "Guest User"
     if report_data.get('user_id'):
-        user = db.users.find_one({"_id": ObjectId(report_data['user_id'])})
-        if user:
-            user_name = user.get('name', 'User')
+        try:
+            user = db.users.find_one({"_id": ObjectId(report_data['user_id'])})
+            if user:
+                user_name = user.get('name', 'User')
+        except Exception:
+            pass  # Invalid ObjectId — keep default "Guest User"
 
     pdf_path = create_pdf_report(report_data, user_name)
     if not pdf_path or not os.path.exists(pdf_path):
