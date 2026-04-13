@@ -1,3 +1,4 @@
+import os
 from flask import Blueprint, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
@@ -27,12 +28,34 @@ def delete_record(report_id):
     user_id = get_jwt_identity()
     db = current_app.db
 
-    result = db.history.delete_one({
+    record = db.history.find_one({
         "report_id": report_id,
-        "user_id": user_id          # ensures users can't delete others' records
+        "user_id": user_id
     })
 
-    if result.deleted_count == 0:
+    if not record:
         return jsonify({"message": "Record not found or access denied"}), 404
+
+    # Delete the record from DB
+    db.history.delete_one({"_id": record["_id"]})
+
+    # Delete associated files (original image, pdf report, and qr code)
+    image_path = record.get('image_path')
+    if image_path and os.path.exists(image_path):
+        try:
+            os.remove(image_path)
+        except Exception as e:
+            print(f"Failed to delete image file: {e}")
+
+    reports_dir = os.path.join('uploads', 'reports')
+    pdf_path = os.path.join(reports_dir, f"{report_id}.pdf")
+    qr_path = os.path.join(reports_dir, f"qr_{report_id}.png")
+
+    for path in [pdf_path, qr_path]:
+        if os.path.exists(path):
+            try:
+                os.remove(path)
+            except Exception as e:
+                print(f"Failed to delete report file: {e}")
 
     return jsonify({"message": "Record deleted successfully"}), 200

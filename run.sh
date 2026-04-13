@@ -1,4 +1,5 @@
 #!/bin/bash
+export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"
 echo "Starting IrisAI Platform..."
 
 # Setup & Run Backend
