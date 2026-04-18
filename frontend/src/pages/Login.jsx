@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { API_URL } from '../config';
 import Logo from '../components/Logo';
 import { useTokens } from '../context/TokenContext';
@@ -11,7 +11,11 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { fetchTokens } = useTokens();
+
+  // Success message passed from Signup page
+  const successMessage = location.state?.message || '';
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -47,6 +51,23 @@ const Login = () => {
 
         {/* Card */}
         <div className="glass-card-elevated" style={{ padding: '2rem' }}>
+          {successMessage && (
+            <div style={{
+              marginBottom: '1.25rem',
+              padding: '0.85rem 1rem',
+              borderRadius: '0.75rem',
+              background: 'rgba(52,211,153,0.1)',
+              border: '1px solid rgba(52,211,153,0.3)',
+              color: '#34d399',
+              fontWeight: 600,
+              fontSize: '0.9rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+            }}>
+              ✅ {successMessage}
+            </div>
+          )}
           {error && <div className="alert-error" style={{ marginBottom: '1.25rem' }}>⚠️ {error}</div>}
 
           <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>

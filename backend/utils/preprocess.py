@@ -19,21 +19,33 @@ if os.path.exists(MODEL_PATH) and os.path.exists(INFO_PATH):
     try:
         import torch
         import torch.nn as nn
-        from torchvision import transforms, models
+        import timm
 
         print("Loading class info...")
         with open(INFO_PATH, 'r') as f:
             info = json.load(f)
             classes_from_json = info.get("class_names", [])
 
-        print("Initializing efficientnet_b3 architecture...")
-        try:
-            model = models.efficientnet_b3(weights=None)
-        except TypeError:
-            model = models.efficientnet_b3(pretrained=False)
-            
-        num_ftrs = model.classifier[1].in_features
-        model.classifier[1] = nn.Linear(num_ftrs, len(classes_from_json))
+        print("Initializing efficientnet_b3 architecture via timm CustomModel...")
+        class CustomModel(nn.Module):
+            def __init__(self, num_classes=6):
+                super().__init__()
+                self.backbone = timm.create_model('efficientnet_b3', pretrained=False, num_classes=0)
+                self.head = nn.Sequential(
+                    nn.BatchNorm1d(1536),
+                    nn.Dropout(0.2),
+                    nn.Linear(1536, 512),
+                    nn.ReLU(),
+                    nn.BatchNorm1d(512),
+                    nn.Dropout(0.2),
+                    nn.Linear(512, num_classes)
+                )
+
+            def forward(self, x):
+                x = self.backbone(x)
+                return self.head(x)
+
+        model = CustomModel(num_classes=len(classes_from_json) if classes_from_json else 6)
         
         print(f"Loading weights from {MODEL_PATH}...")
         device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
@@ -43,6 +55,8 @@ if os.path.exists(MODEL_PATH) and os.path.exists(INFO_PATH):
 
         print(f"✅ AI model loaded successfully on {device}")
         
+        # NOTE: torchvision transforms are still used below, so they need to be imported
+        from torchvision import transforms
         transform = transforms.Compose([
             transforms.Resize((300, 300)),
             transforms.ToTensor(),
@@ -50,7 +64,9 @@ if os.path.exists(MODEL_PATH) and os.path.exists(INFO_PATH):
         ])
         
     except Exception as e:
+        import traceback
         print(f"⚠️  Failed to load model: {e}. Using mock predictions.")
+        traceback.print_exc()
         model = None
 
 FRONTEND_CLASSES = [

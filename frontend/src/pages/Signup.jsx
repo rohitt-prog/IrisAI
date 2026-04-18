@@ -14,13 +14,30 @@ const Signup = () => {
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
+
+    // Client-side validation
+    if (!name.trim()) {
+      setError('Please enter your full name.');
+      return;
+    }
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long.');
+      return;
+    }
+
+    setLoading(true);
     try {
-      await axios.post(`${API_URL}/auth/signup`, { name, email, password });
-      navigate('/login');
+      await axios.post(`${API_URL}/auth/signup`, { name: name.trim(), email, password });
+      // Pass success message to the Login page via router state
+      navigate('/login', { state: { message: 'Account created! Please sign in.' } });
     } catch (err) {
-      setError(err.response?.data?.message || 'Signup failed. Please try again.');
+      const msg = err.response?.data?.message || '';
+      if (msg.toLowerCase().includes('already exists') || err.response?.status === 400) {
+        setError('An account with this email already exists. Please sign in instead.');
+      } else {
+        setError(msg || 'Signup failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
