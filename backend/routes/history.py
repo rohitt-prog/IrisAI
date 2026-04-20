@@ -1,6 +1,9 @@
 import os
+import logging
 from flask import Blueprint, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
+
+logger = logging.getLogger(__name__)
 
 history_bp = Blueprint('history', __name__)
 
@@ -45,7 +48,7 @@ def delete_record(report_id):
         try:
             os.remove(image_path)
         except Exception as e:
-            print(f"Failed to delete image file: {e}")
+            logger.warning(f"Failed to delete image file: {e}")
 
     reports_dir = os.path.join('uploads', 'reports')
     pdf_path = os.path.join(reports_dir, f"{report_id}.pdf")
@@ -56,6 +59,6 @@ def delete_record(report_id):
             try:
                 os.remove(path)
             except Exception as e:
-                print(f"Failed to delete report file: {e}")
+                logger.warning(f"Failed to delete report file: {e}")
 
     return jsonify({"message": "Record deleted successfully"}), 200

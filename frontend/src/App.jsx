@@ -6,6 +6,7 @@ import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Upload from './pages/Upload';
 import Result from './pages/Result';
+import Chat from './pages/Chat';
 import History from './pages/History';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
@@ -27,6 +28,7 @@ function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/upload" element={<Upload />} />
               <Route path="/result" element={<Result />} />
+              <Route path="/chat" element={<Chat />} />
               <Route path="/history" element={<History />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/terms" element={<Terms />} />

@@ -80,7 +80,7 @@ const ImageUploader = () => {
         // Handle JWT errors or other backend messages
         setError(`Error: ${err.response.data.msg || err.response.data.message}`);
       } else if (err.response?.status === 413) {
-        setError('File is too large. Please upload an image smaller than 5MB.');
+        setError('File is too large. Please upload an image smaller than 20MB.');
       } else {
         setError(`Failed to process image: ${err.message}`);
       }
@@ -312,7 +312,6 @@ const ImageUploader = () => {
                   <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                     <span style={{ fontSize: '0.7rem', padding: '6px 14px', borderRadius: '4px', background: 'transparent', border: '1px solid rgba(0, 120, 255, 0.3)', color: '#80ebff', fontWeight: '500' }}>JPG</span>
                     <span style={{ fontSize: '0.7rem', padding: '6px 14px', borderRadius: '4px', background: 'transparent', border: '1px solid rgba(0, 120, 255, 0.3)', color: '#80ebff', fontWeight: '500' }}>PNG</span>
-                    <span style={{ fontSize: '0.7rem', padding: '6px 14px', borderRadius: '4px', background: 'transparent', border: '1px solid rgba(0, 120, 255, 0.3)', color: '#80ebff', fontWeight: '500' }}>DICOM</span>
                     <span style={{ fontSize: '0.7rem', padding: '6px 14px', borderRadius: '4px', background: 'rgba(0, 120, 255, 0.15)', border: '1px solid rgba(0, 120, 255, 0.1)', color: '#a3d9ff', fontWeight: '500' }}>up to<br/>20MB</span>
                   </div>
                 </div>
@@ -440,7 +439,6 @@ const ImageUploader = () => {
                   <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                     <span style={{ fontSize: '0.7rem', padding: '6px 14px', borderRadius: '4px', background: 'transparent', border: '1px solid rgba(0, 120, 255, 0.3)', color: '#80ebff', fontWeight: '500' }}>JPG</span>
                     <span style={{ fontSize: '0.7rem', padding: '6px 14px', borderRadius: '4px', background: 'transparent', border: '1px solid rgba(0, 120, 255, 0.3)', color: '#80ebff', fontWeight: '500' }}>PNG</span>
-                    <span style={{ fontSize: '0.7rem', padding: '6px 14px', borderRadius: '4px', background: 'transparent', border: '1px solid rgba(0, 120, 255, 0.3)', color: '#80ebff', fontWeight: '500' }}>DICOM</span>
                     <span style={{ fontSize: '0.7rem', padding: '6px 14px', borderRadius: '4px', background: 'rgba(0, 120, 255, 0.15)', border: '1px solid rgba(0, 120, 255, 0.1)', color: '#a3d9ff', fontWeight: '500' }}>up to<br/>20MB</span>
                   </div>
               </div>

@@ -25,7 +25,8 @@ const ChatBox = () => {
     try {
       const res = await axios.post(`${API_URL}/chat`, { question: userMsg });
       setMessages(prev => [...prev, { sender: 'ai', text: res.data.answer }]);
-    } catch {
+    } catch (err) {
+      console.error('Chat error:', err);
       setMessages(prev => [...prev, { sender: 'ai', text: 'Sorry, I\'m unable to process your question right now. Please try again later.' }]);
     }
     setLoading(false);

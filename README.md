@@ -6,7 +6,7 @@
 
 ## 🌟 Overview
 
-**IrisAI** is a full-stack web application that uses deep learning to detect eye conditions from anterior eye segment images. It combines a PyTorch classification model with Google Gemini generative AI to provide plain-language explanations, and generates professional PDF reports with embedded QR codes — all behind a secure, JWT-authenticated interface.
+**IrisAI** is a full-stack web application that uses deep learning to detect eye conditions from anterior eye segment images. It combines a PyTorch classification model with Google Gemini generative AI to provide plain-language explanations and an interactive AI chat assistant, and generates professional PDF reports with embedded QR codes — all behind a secure, JWT-authenticated interface.
 
 > ⚠️ **Medical Disclaimer:** This system is for preliminary screening purposes only. It is NOT a substitute for professional medical diagnosis. Always consult a licensed ophthalmologist.
 
@@ -19,11 +19,13 @@
 | 🩺 **6 Conditions Detected** | Normal, Glaucoma, Cataract, Diabetic Retinopathy, Uveitis, Keratoconus |
 | ⚡ **Instant AI Analysis** | Deep learning classification with confidence score + per-class probability breakdown |
 | 🤖 **Generative AI Explanations** | Google Gemini explains each result in clear, patient-friendly language |
-| 💬 **AI Chat Assistant** | Ask follow-up eye-health questions powered by Gemini |
+| 💬 **AI Chat Assistant** | Dedicated chat page — ask any eye-health question anytime, powered by Gemini |
 | 📄 **PDF + QR Reports** | Downloadable clinical reports with embedded QR codes via ReportLab |
-| 📋 **Scan History** | Per-user history of all past screenings stored in MongoDB |
+| 📋 **Scan History** | Per-user history of all past screenings with analytics charts stored in MongoDB |
 | 🔐 **JWT Auth** | Secure user registration & login with bcrypt password hashing |
 | 🌐 **Anonymous Mode** | Run a screening without an account (results still saved) |
+| 🛡️ **Rate Limiting** | Flask-Limiter protects auth and prediction endpoints from abuse |
+| 🗄️ **DB Indexes** | Optimized MongoDB queries on users, history, and token logs |
 
 ---
 
@@ -32,52 +34,58 @@
 ```
 projectDeep/
 ├── docker-compose.yml        # Multi-container Docker configuration
+├── run.sh                    # One-command startup script
 ├── backend/                  # Flask API (Python)
 │   ├── Dockerfile            # Container build configuration
-│   ├── app.py                # App entry point, MongoDB & JWT setup
+│   ├── app.py                # App entry point, MongoDB & JWT setup, health check
+│   ├── config.py             # Centralised application configuration
 │   ├── requirements.txt      # Python dependencies
-│   ├── .env.example          # Environment variable template
+│   ├── .env.example          # Environment variable template (with docs)
 │   ├── Procfile              # Gunicorn config (for deployment)
 │   ├── model/
-│   │   └── model.h5          # ← Place your trained Keras model here
+│   │   ├── eye_disease_model_v4.pth   # ← Place your trained PyTorch model here
+│   │   └── class_info.json            # ← Class label metadata
 │   ├── routes/
-│   │   ├── auth.py           # /api/auth — register & login
+│   │   ├── auth.py           # /api/auth — register & login (with validation)
 │   │   ├── predict.py        # /api/predict — image upload & AI prediction
-│   │   ├── chat.py           # /api/chat — Gemini AI chat
-│   │   ├── history.py        # /api/history — scan history
-│   │   └── report.py         # /api/report — PDF generation
+│   │   ├── chat.py           # /api/chat — Gemini AI chat assistant
+│   │   ├── history.py        # /api/history — scan history & deletion
+│   │   ├── report.py         # /api/report — PDF report generation
+│   │   └── tokens.py         # /api/tokens — token balance & top-up
 │   └── utils/
 │       ├── preprocess.py     # Image preprocessing & model inference
-│       ├── llm_explainer.py  # Gemini API integration (explain + chat)
-│       └── pdf_generator.py  # ReportLab PDF + QR code generation
+│       ├── llm_explainer.py  # Gemini API integration (explain + chat, with caching)
+│       ├── pdf_generator.py  # ReportLab PDF + QR code generation
+│       └── cleanup.py        # File cleanup utilities (old uploads & orphaned reports)
 │
-├── frontend/                 # React + Vite (JavaScript)
-│   ├── Dockerfile            # Nginx production container build
-│   └── src/
-│       ├── App.jsx           # Router & layout
-│       ├── config.js         # API base URL config
-│       ├── context/
-│       │   └── TokenContext.jsx # Global token state management for auth
-│       ├── pages/
-│       │   ├── Login.jsx
-│       │   ├── Signup.jsx
-│       │   ├── Dashboard.jsx # Hero, stats, how-it-works
-│       │   ├── Upload.jsx    # Image uploader entry point
-│       │   ├── Result.jsx    # Prediction result + report download
-│       │   ├── History.jsx   # Per-user scan history & deletion
-│       │   ├── Pricing.jsx      # Subscription pricing plans
-│       │   ├── PaymentPending.jsx # Payment processing status page
-│       │   ├── Privacy.jsx      # Privacy Policy
-│       │   └── Terms.jsx        # Terms of Service
-│       └── components/
-│           ├── Navbar.jsx
-│           ├── Footer.jsx
-│           ├── ImageUploader.jsx  # Drag-and-drop image upload
-│           ├── ResultCard.jsx     # Condition card UI
-│           ├── Chart.jsx          # Probability bar chart
-│           └── ChatBox.jsx        # AI chat interface
-│
-└── run.sh                    # One-command startup script
+└── frontend/                 # React + Vite (JavaScript)
+    ├── Dockerfile            # Nginx production container build
+    └── src/
+        ├── App.jsx           # Router & layout
+        ├── config.js         # API base URL config
+        ├── context/
+        │   └── TokenContext.jsx # Global token state management
+        ├── pages/
+        │   ├── Login.jsx
+        │   ├── Signup.jsx
+        │   ├── Dashboard.jsx    # Hero, stats, how-it-works
+        │   ├── Upload.jsx       # Image uploader entry point
+        │   ├── Result.jsx       # Prediction result + report download + inline chat
+        │   ├── Chat.jsx         # ✨ Dedicated AI Assistant chat page (/chat)
+        │   ├── History.jsx      # Per-user scan history & deletion
+        │   ├── Pricing.jsx      # Subscription pricing plans
+        │   ├── PaymentPending.jsx # Payment processing status page
+        │   ├── Privacy.jsx      # Privacy Policy
+        │   └── Terms.jsx        # Terms of Service
+        └── components/
+            ├── Navbar.jsx
+            ├── Footer.jsx
+            ├── ImageUploader.jsx  # Drag-and-drop image upload
+            ├── ResultCard.jsx     # Condition card UI
+            ├── Chart.jsx          # Probability bar chart
+            ├── ChatBox.jsx        # Embedded AI chat (used on Result page)
+            ├── GoldCoin.jsx       # Token display icon
+            └── Logo.jsx           # IrisAI logo SVG
 ```
 
 ---
@@ -102,7 +110,7 @@ The easiest way to run the entire stack (Frontend, Backend, and MongoDB) is usin
 git clone <your-repo-url>
 cd projectDeep
 cp backend/.env.example backend/.env
-# ⚠️ Edit backend/.env to add your GEMINI_API_KEY!
+# ⚠️ Edit backend/.env to add your GEMINI_API_KEY and generate a secure JWT_SECRET_KEY!
 
 docker compose up --build
 ```
@@ -131,9 +139,13 @@ cp backend/.env.example backend/.env
 Edit `backend/.env`:
 
 ```env
-GEMINI_API_KEY=your_gemini_api_key_here
+# Generate a secure key: python -c "import secrets; print(secrets.token_hex(32))"
+JWT_SECRET_KEY=your-64-char-random-string
+
 MONGO_URI=mongodb://localhost:27017/iris_health
-JWT_SECRET_KEY=change-this-to-a-long-random-string
+
+# Get free key from: https://aistudio.google.com/app/apikey
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 ---
@@ -149,8 +161,6 @@ python3 app.py
 ```
 
 The Flask API will start at **`http://localhost:5001`**.
-
-> 💡 **Apple Silicon Mac?** Replace `tensorflow` in `requirements.txt` with `tensorflow-macos`.
 
 ---
 
@@ -177,13 +187,24 @@ This installs dependencies and starts both backend and frontend in the backgroun
 
 ---
 
+## 💬 AI Chat Assistant
+
+IrisAI includes a fully featured AI chat assistant powered by Google Gemini. You can access it two ways:
+
+1. **Dedicated Chat Page** — click **🤖 AI Assistant** in the top navbar to chat anytime, even without performing a scan. Includes suggested starter questions.
+2. **Inline on Result Page** — after completing a scan, a chat panel appears automatically so you can ask follow-up questions about your specific diagnosis.
+
+The chat assistant can answer questions about eye conditions, symptoms, treatments, and general eye health. It always includes a medical disclaimer reminding users to consult a licensed ophthalmologist.
+
+---
+
 ## 🤖 AI Model Integration
 
 The system supports two modes:
 
 ### ✅ Real Model (Recommended)
 1. Train a PyTorch EfficientNet-B3 model on 6 eye condition classes (in the exact order below).
-2. Save the weights as `backend/model/eye_disease_model_v4.pth` and class info as `class_info.json`.
+2. Save the weights as `backend/model/eye_disease_model_v4.pth` and class info as `backend/model/class_info.json`.
 3. The app auto-loads it on startup.
 
 **Required class order** (must match your training labels):
@@ -204,13 +225,17 @@ All endpoints are prefixed with `/api`.
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| `POST` | `/api/auth/register` | None | Create a new user account |
+| `GET`  | `/health` | None | Health check — DB, model & Gemini API status |
+| `POST` | `/api/auth/signup` | None | Create a new user account |
 | `POST` | `/api/auth/login` | None | Login, returns JWT token |
+| `GET`  | `/api/auth/me` | JWT required | Get current user profile |
 | `POST` | `/api/predict/` | Optional JWT | Upload eye image, get prediction + Gemini explanation |
-| `POST` | `/api/chat` | None | Ask an eye-health question |
+| `POST` | `/api/chat` | None | Ask any eye-health question to the AI assistant |
 | `GET`  | `/api/history/` | JWT required | Fetch the current user's scan history |
-| `DELETE`| `/api/history/<history_id>` | JWT required | Delete a specific scan record |
-| `GET`  | `/api/report/<report_id>` | JWT required | Download a PDF report for a scan |
+| `DELETE` | `/api/history/<report_id>` | JWT required | Delete a specific scan record & associated files |
+| `GET`  | `/api/report/download-report?id=<id>` | None | Download PDF report for a scan |
+| `GET`  | `/api/tokens/` | JWT required | Get current token balance |
+| `POST` | `/api/tokens/add` | JWT required | Add tokens (simulated purchase) |
 
 ---
 
@@ -218,10 +243,11 @@ All endpoints are prefixed with `/api`.
 
 ### Backend
 - **Flask** — REST API framework
-- **PyTorch** — Deep learning model inference
-- **Google Gemini** (`google-generativeai`) — AI explanations and chat
+- **PyTorch** — Deep learning model inference (EfficientNet-B3)
+- **Google Gemini** (`google-genai`) — AI explanations and chat (with LRU caching)
 - **MongoDB + PyMongo** — Database for users & scan history
 - **Flask-JWT-Extended** — JWT authentication
+- **Flask-Limiter** — Rate limiting for auth & prediction endpoints
 - **ReportLab + qrcode** — PDF report generation
 - **bcrypt** — Password hashing
 - **Gunicorn** — Production WSGI server
@@ -229,6 +255,8 @@ All endpoints are prefixed with `/api`.
 ### Frontend
 - **React 18** + **Vite** — Modern SPA framework
 - **React Router v6** — Client-side routing
+- **Recharts** — Analytics bar & pie charts
+- **Axios** — HTTP client
 - **Vanilla CSS** — Custom design system with glassmorphism & dark mode
 - **Space Grotesk** — Premium typography (Google Fonts)
 
@@ -238,9 +266,9 @@ All endpoints are prefixed with `/api`.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `GEMINI_API_KEY` | Yes | Google Gemini API key for AI explanations |
-| `MONGO_URI` | Yes | MongoDB connection string |
-| `JWT_SECRET_KEY` | Yes | Secret key for signing JWT tokens |
+| `JWT_SECRET_KEY` | **Yes** | Secret key for signing JWT tokens. Generate with `python -c "import secrets; print(secrets.token_hex(32))"` |
+| `MONGO_URI` | **Yes** | MongoDB connection string |
+| `GEMINI_API_KEY` | Recommended | Google Gemini API key for AI explanations & chat |
 
 ---
 
@@ -253,8 +281,9 @@ All endpoints are prefixed with `/api`.
 | `/signup` | Signup | User registration |
 | `/dashboard` | Dashboard | Overview, stats, and how-it-works |
 | `/upload` | Upload | Drag-and-drop eye image uploader |
-| `/result` | Result | Prediction, confidence, chart, AI explanation |
-| `/history` | History | Past scans with report download links & deletion |
+| `/result` | Result | Prediction, confidence, chart, AI explanation + inline chat |
+| `/chat` | **AI Assistant** | ✨ Standalone chatbot page — ask any eye-health question |
+| `/history` | History | Past scans with analytics charts, report download & deletion |
 | `/pricing` | Pricing | Subscription pricing plans |
 | `/payment-pending` | Payment Pending | Payment processing status |
 | `/privacy` | Privacy | Privacy Policy |
@@ -286,6 +315,20 @@ The system gracefully degrades — no model file means random mock predictions a
 - UI/UX development
 - API integration testing
 - Demonstration environments
+
+---
+
+## 🧹 File Cleanup
+
+The backend includes a `cleanup.py` utility to manage disk usage:
+
+```bash
+# Run manually via Flask CLI
+cd backend && flask cleanup
+
+# Or run directly (dry run - just shows what would be deleted)
+python -c "from utils.cleanup import cleanup_old_files; cleanup_old_files(days=30, dry_run=True)"
+```
 
 ---
 

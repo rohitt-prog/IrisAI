@@ -7,6 +7,7 @@ const navLinks = [
   { to: '/upload', label: 'Screening', icon: '●' },
   { to: '/dashboard', label: 'Dashboard', authRequired: true },
   { to: '/history', label: 'History', authRequired: true },
+  { to: '/chat', label: 'AI Assistant', icon: '🤖' },
 ];
 
 // Colour based on token count
