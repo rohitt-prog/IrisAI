@@ -1,4 +1,9 @@
 import os
+import logging
+import hashlib
+from functools import lru_cache
+
+logger = logging.getLogger(__name__)
 
 # Use the new google-genai SDK (replaces deprecated google-generativeai)
 try:
@@ -36,26 +41,13 @@ def _generate(client, prompt: str) -> str:
         return response.text
 
 
-def explain_disease(prediction: str) -> str:
-    """
-    Use Gemini to generate a plain-language explanation for the predicted eye condition.
-    Falls back to a static message if no API key is configured.
-    """
-    if prediction == "Normal":
-        return (
-            "Your eye appears healthy based on our preliminary AI analysis. "
-            "No significant abnormality was detected. Maintain regular eye check-ups with your ophthalmologist. "
-            "\n\n⚠️ Disclaimer: This AI system is for preliminary screening only and is NOT a medical diagnosis."
-        )
-
+# ── LRU cache for Gemini responses (reduces API costs) ──────────────────────
+@lru_cache(maxsize=20)
+def _cached_explain(prediction: str, prompt_hash: str) -> str:
+    """Internal cached explanation generator. Caches by prediction + prompt hash."""
     client = _get_client()
     if client is None:
-        return (
-            f"⚠️ AI explanation unavailable (no API key set). "
-            f"Preliminary screening suggests: {prediction}. "
-            f"Please consult an ophthalmologist for a proper medical diagnosis. "
-            f"\n\n⚠️ Disclaimer: This system is for preliminary screening only."
-        )
+        return None
 
     prompt = (
         f"You are a compassionate medical assistant helping a patient understand their eye scan result. "
@@ -71,12 +63,37 @@ def explain_disease(prediction: str) -> str:
     try:
         return _generate(client, prompt)
     except Exception as e:
-        print(f"⚠️ LLM explain_disease error: {e}")
+        logger.error(f"LLM explain_disease error: {e}")
+        return None
+
+
+def explain_disease(prediction: str) -> str:
+    """
+    Use Gemini to generate a plain-language explanation for the predicted eye condition.
+    Responses are cached to reduce API costs.
+    Falls back to a static message if no API key is configured.
+    """
+    if prediction == "Normal":
         return (
+            "Your eye appears healthy based on our preliminary AI analysis. "
+            "No significant abnormality was detected. Maintain regular eye check-ups with your ophthalmologist. "
+            "\n\n⚠️ Disclaimer: This AI system is for preliminary screening only and is NOT a medical diagnosis."
+        )
+
+    # Generate cache key from prediction
+    prompt_hash = hashlib.md5(prediction.encode()).hexdigest()
+
+    result = _cached_explain(prediction, prompt_hash)
+
+    if result is None:
+        return (
+            f"⚠️ AI explanation unavailable (no API key set). "
             f"Preliminary screening suggests: {prediction}. "
-            f"Please consult an ophthalmologist for a proper diagnosis. "
+            f"Please consult an ophthalmologist for a proper medical diagnosis. "
             f"\n\n⚠️ Disclaimer: This system is for preliminary screening only."
         )
+
+    return result
 
 
 def chat_assistant(question: str) -> str:
@@ -102,5 +119,5 @@ def chat_assistant(question: str) -> str:
     try:
         return _generate(client, prompt)
     except Exception as e:
-        print(f"⚠️ LLM chat_assistant error: {e}")
+        logger.error(f"LLM chat_assistant error: {e}")
         return "I'm unable to answer right now. Please try again later, or consult a licensed ophthalmologist for medical advice."
