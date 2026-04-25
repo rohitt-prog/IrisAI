@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { API_URL } from '../config';
+import VoiceButton from '../components/VoiceButton';
 
 const SUGGESTIONS = [
   "What are the symptoms of glaucoma?",
@@ -27,12 +28,44 @@ const TypingDots = () => (
 const Chat = () => {
   const [messages, setMessages] = useState([{
     sender: 'ai',
-    text: "👋 Hello! I'm your AI Eye Health Assistant powered by Gemini.\n\nAsk me anything about eye conditions, symptoms, treatments, or general eye health. I'm here to help!",
+    text: "👋 Hello! I'm your AI Eye Health Assistant powered by Gemini.\n\nAsk me anything about eye conditions, symptoms, treatments, or general eye health. You can also tap 🎤 to speak in any language!",
   }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
+  const audioRef = useRef(null);   // for playing TTS audio
+
+  // ── Voice callbacks ────────────────────────────────────────────────────
+  const handleVoiceTranscript = useCallback((transcript) => {
+    // Show what the user said as a user message immediately
+    setMessages(prev => [...prev, { sender: 'user', text: transcript, isVoice: true }]);
+    setLoading(true);
+  }, []);
+
+  const handleVoiceResponse = useCallback(({ text, audio, language }) => {
+    // Show AI response
+    setMessages(prev => [...prev, { sender: 'ai', text, isVoice: true }]);
+    setLoading(false);
+
+    // Auto-play the TTS audio
+    if (audio) {
+      try {
+        const mp3 = `data:audio/mp3;base64,${audio}`;
+        if (audioRef.current) {
+          audioRef.current.src = mp3;
+          audioRef.current.play().catch(e => console.warn('Audio autoplay blocked:', e));
+        }
+      } catch (e) {
+        console.warn('Could not play TTS audio:', e);
+      }
+    }
+  }, []);
+
+  const handleVoiceError = useCallback((msg) => {
+    setLoading(false);
+    setMessages(prev => [...prev, { sender: 'ai', text: `⚠️ ${msg}`, isError: true }]);
+  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -205,6 +238,7 @@ const Chat = () => {
           display: 'flex', gap: '0.625rem',
           background: 'rgba(255,255,255,0.02)',
           flexShrink: 0,
+          alignItems: 'center',
         }}>
           <input
             ref={inputRef}
@@ -216,6 +250,13 @@ const Chat = () => {
             onKeyDown={handleKeyDown}
             disabled={loading}
             style={{ borderRadius: '50rem', flex: 1 }}
+          />
+          {/* Microphone button */}
+          <VoiceButton
+            onTranscript={handleVoiceTranscript}
+            onResponse={handleVoiceResponse}
+            onError={handleVoiceError}
+            disabled={loading}
           />
           <button
             className="btn-primary"
@@ -231,6 +272,8 @@ const Chat = () => {
           >
             {loading ? '...' : 'Send ↑'}
           </button>
+          {/* Hidden audio player for TTS playback */}
+          <audio ref={audioRef} style={{ display: 'none' }} />
         </div>
       </div>
 

@@ -13,6 +13,7 @@ __pycache__/
 *$py.class
 venv/
 .env
+backend/*.json
 
 # Model check points and heavy files
 backend/model/*.pth

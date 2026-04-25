@@ -19,6 +19,7 @@
 | 🩺 **6 Conditions Detected** | Normal, Glaucoma, Cataract, Diabetic Retinopathy, Uveitis, Keratoconus |
 | ⚡ **Instant AI Analysis** | Deep learning classification with confidence score + per-class probability breakdown |
 | 🤖 **Generative AI Explanations** | Google Gemini explains each result in clear, patient-friendly language |
+| 🎙️ **Multilingual Voice Chat** | Speak to the AI assistant in 10+ languages (Hindi, Spanish, etc.) with voice responses |
 | 💬 **AI Chat Assistant** | Dedicated chat page — ask any eye-health question anytime, powered by Gemini |
 | 📄 **PDF + QR Reports** | Downloadable clinical reports with embedded QR codes via ReportLab |
 | 📋 **Scan History** | Per-user history of all past screenings with analytics charts stored in MongoDB |
@@ -49,12 +50,14 @@ projectDeep/
 │   │   ├── auth.py           # /api/auth — register & login (with validation)
 │   │   ├── predict.py        # /api/predict — image upload & AI prediction
 │   │   ├── chat.py           # /api/chat — Gemini AI chat assistant
+│   │   ├── voice.py          # /api/voice — Multilingual voice interaction (STT/TTS)
 │   │   ├── history.py        # /api/history — scan history & deletion
 │   │   ├── report.py         # /api/report — PDF report generation
 │   │   └── tokens.py         # /api/tokens — token balance & top-up
 │   └── utils/
 │       ├── preprocess.py     # Image preprocessing & model inference
 │       ├── llm_explainer.py  # Gemini API integration (explain + chat, with caching)
+│       ├── voice_service.py  # Voice pipeline: STT → Gemini → TTS
 │       ├── pdf_generator.py  # ReportLab PDF + QR code generation
 │       └── cleanup.py        # File cleanup utilities (old uploads & orphaned reports)
 │
@@ -81,6 +84,7 @@ projectDeep/
             ├── Navbar.jsx
             ├── Footer.jsx
             ├── ImageUploader.jsx  # Drag-and-drop image upload
+            ├── VoiceButton.jsx    # ✨ Multilingual microphone component
             ├── ResultCard.jsx     # Condition card UI
             ├── Chart.jsx          # Probability bar chart
             ├── ChatBox.jsx        # Embedded AI chat (used on Result page)
@@ -99,6 +103,7 @@ projectDeep/
 - **MongoDB** (local or [Atlas free tier](https://www.mongodb.com/atlas))
 - **Docker Desktop** (Highly Recommended for easy setup)
 - **Google Gemini API Key** — get one free at [aistudio.google.com](https://aistudio.google.com/app/apikey)
+- **Google Cloud Service Account** — for STT/TTS voice features (Speech-to-Text and Text-to-Speech APIs enabled)
 
 ---
 
@@ -146,6 +151,9 @@ MONGO_URI=mongodb://localhost:27017/iris_health
 
 # Get free key from: https://aistudio.google.com/app/apikey
 GEMINI_API_KEY=your_gemini_api_key_here
+
+# Path to Google Cloud Service Account JSON key (for Voice)
+GOOGLE_APPLICATION_CREDENTIALS="/absolute/path/to/backend/gcloud-key.json"
 ```
 
 ---
@@ -198,6 +206,20 @@ The chat assistant can answer questions about eye conditions, symptoms, treatmen
 
 ---
 
+## 🎙️ Multilingual Voice Interaction
+
+IrisAI features a sophisticated voice-to-voice pipeline that allows users to interact with the AI assistant naturally in their preferred language.
+
+### How it works:
+1. **Speech-to-Text:** Converts user speech to text while auto-detecting the language (Powered by Google Cloud STT).
+2. **AI Processing:** Gemini processes the query and generates a response in the *same* detected language or dialect (e.g., Hinglish).
+3. **Text-to-Speech:** Converts the AI's response back to high-quality audio bytes (Powered by Google Cloud TTS).
+4. **Auto-Playback:** The frontend automatically plays the AI response as soon as it's received.
+
+**Supported Languages:** English, Hindi, Spanish, French, German, Arabic, Chinese, Portuguese, Japanese, Korean, and Russian.
+
+---
+
 ## 🤖 AI Model Integration
 
 The system supports two modes:
@@ -231,6 +253,7 @@ All endpoints are prefixed with `/api`.
 | `GET`  | `/api/auth/me` | JWT required | Get current user profile |
 | `POST` | `/api/predict/` | Optional JWT | Upload eye image, get prediction + Gemini explanation |
 | `POST` | `/api/chat` | None | Ask any eye-health question to the AI assistant |
+| `POST` | `/api/voice` | None | Multilingual voice pipeline (Audio file in → STT → Gemini → TTS → Audio out) |
 | `GET`  | `/api/history/` | JWT required | Fetch the current user's scan history |
 | `DELETE` | `/api/history/<report_id>` | JWT required | Delete a specific scan record & associated files |
 | `GET`  | `/api/report/download-report?id=<id>` | None | Download PDF report for a scan |
@@ -269,6 +292,7 @@ All endpoints are prefixed with `/api`.
 | `JWT_SECRET_KEY` | **Yes** | Secret key for signing JWT tokens. Generate with `python -c "import secrets; print(secrets.token_hex(32))"` |
 | `MONGO_URI` | **Yes** | MongoDB connection string |
 | `GEMINI_API_KEY` | Recommended | Google Gemini API key for AI explanations & chat |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Recommended | Absolute path to Google Cloud service account JSON (for Voice features) |
 
 ---
 

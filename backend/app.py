@@ -17,6 +17,7 @@ from routes.chat import chat_bp
 from routes.report import report_bp
 from routes.history import history_bp
 from routes.tokens import tokens_bp
+from routes.voice import voice_bp
 
 load_dotenv()
 
@@ -171,6 +172,7 @@ app.register_blueprint(chat_bp, url_prefix='/api')
 app.register_blueprint(report_bp, url_prefix='/api/report')
 app.register_blueprint(history_bp, url_prefix='/api/history')
 app.register_blueprint(tokens_bp, url_prefix='/api/tokens')
+app.register_blueprint(voice_bp, url_prefix='/api')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001, debug=True)
