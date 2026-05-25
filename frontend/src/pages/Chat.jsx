@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../config';
 import VoiceButton from '../components/VoiceButton';
@@ -26,6 +27,15 @@ const TypingDots = () => (
 );
 
 const Chat = () => {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+    }
+  }, [navigate]);
+
   const [messages, setMessages] = useState([{
     sender: 'ai',
     text: "👋 Hello! I'm your AI Eye Health Assistant powered by Gemini.\n\nAsk me anything about eye conditions, symptoms, treatments, or general eye health. You can also tap 🎤 to speak in any language!",
@@ -43,7 +53,7 @@ const Chat = () => {
     setLoading(true);
   }, []);
 
-  const handleVoiceResponse = useCallback(({ text, audio, language }) => {
+  const handleVoiceResponse = useCallback(({ text, audio }) => {
     // Show AI response
     setMessages(prev => [...prev, { sender: 'ai', text, isVoice: true }]);
     setLoading(false);
