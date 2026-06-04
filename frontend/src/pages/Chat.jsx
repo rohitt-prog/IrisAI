@@ -5,12 +5,12 @@ import { API_URL } from '../config';
 import VoiceButton from '../components/VoiceButton';
 
 const SUGGESTIONS = [
-  "What are the symptoms of glaucoma?",
-  "How is cataract treated?",
-  "What causes diabetic retinopathy?",
-  "How often should I get an eye exam?",
-  "What is keratoconus?",
-  "Can uveitis be cured?",
+  { text: "What are the symptoms of glaucoma?",         icon: "👁️" },
+  { text: "How is cataract treated?",                    icon: "💊" },
+  { text: "What causes diabetic retinopathy?",           icon: "🩸" },
+  { text: "How often should I get an eye exam?",         icon: "📅" },
+  { text: "What is keratoconus?",                        icon: "🔬" },
+  { text: "Can uveitis be cured?",                       icon: "🏥" },
 ];
 
 const TypingDots = () => (
@@ -18,22 +18,86 @@ const TypingDots = () => (
     {[0, 1, 2].map(i => (
       <span key={i} style={{
         width: 8, height: 8, borderRadius: '50%',
-        background: 'var(--accent-blue)',
+        background: 'var(--iris-400)',
         display: 'inline-block',
         animation: `typingBounce 1.2s ${i * 0.2}s ease-in-out infinite`,
+        boxShadow: '0 0 8px rgba(0,229,255,0.5)',
       }} />
     ))}
   </div>
 );
+
+const MessageBubble = ({ msg }) => {
+  const isUser = msg.sender === 'user';
+  return (
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: isUser ? 'flex-end' : 'flex-start',
+        alignItems: 'flex-end',
+        gap: '0.6rem',
+        animation: 'fade-in-up 0.3s ease forwards',
+      }}
+    >
+      {/* AI avatar */}
+      {!isUser && (
+        <div style={{
+          width: 34, height: 34, flexShrink: 0, borderRadius: '50%',
+          background: 'var(--gradient-primary)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '0.9rem', boxShadow: 'var(--glow-sm)',
+        }}>🤖</div>
+      )}
+
+      <div
+        className={isUser ? 'chat-bubble-user' : 'chat-bubble-ai'}
+        style={{
+          maxWidth: '75%',
+          whiteSpace: 'pre-wrap',
+          lineHeight: 1.7,
+          ...(msg.isError ? {
+            borderColor: 'rgba(244,63,94,0.3)',
+            background: 'rgba(244,63,94,0.08)',
+          } : {}),
+          ...(msg.isVoice && isUser ? {
+            background: 'linear-gradient(135deg, #0044cc, #6d28d9)',
+          } : {}),
+        }}
+      >
+        {msg.isVoice && (
+          <span style={{ fontSize: '0.72rem', opacity: 0.7, marginRight: '0.4rem' }}>
+            {isUser ? '🎤' : '🔊'}
+          </span>
+        )}
+        {msg.text}
+      </div>
+
+      {/* User avatar */}
+      {isUser && (
+        <div style={{
+          width: 34, height: 34, flexShrink: 0, borderRadius: '50%',
+          background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '0.85rem', fontWeight: 700, color: '#fff',
+          border: '2px solid rgba(59,130,246,0.4)',
+        }}>
+          {(() => {
+            const u = localStorage.getItem('user');
+            const name = u ? JSON.parse(u).name : '';
+            return name ? name[0].toUpperCase() : '👤';
+          })()}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Chat = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
-    }
+    if (!token) navigate('/login');
   }, [navigate]);
 
   const [messages, setMessages] = useState([{
@@ -42,33 +106,28 @@ const Chat = () => {
   }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [messageCount, setMessageCount] = useState(0);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
-  const audioRef = useRef(null);   // for playing TTS audio
+  const audioRef = useRef(null);
 
-  // ── Voice callbacks ────────────────────────────────────────────────────
   const handleVoiceTranscript = useCallback((transcript) => {
-    // Show what the user said as a user message immediately
     setMessages(prev => [...prev, { sender: 'user', text: transcript, isVoice: true }]);
     setLoading(true);
   }, []);
 
   const handleVoiceResponse = useCallback(({ text, audio }) => {
-    // Show AI response
     setMessages(prev => [...prev, { sender: 'ai', text, isVoice: true }]);
     setLoading(false);
-
-    // Auto-play the TTS audio
+    setMessageCount(c => c + 1);
     if (audio) {
       try {
         const mp3 = `data:audio/mp3;base64,${audio}`;
         if (audioRef.current) {
           audioRef.current.src = mp3;
-          audioRef.current.play().catch(e => console.warn('Audio autoplay blocked:', e));
+          audioRef.current.play().catch(() => {});
         }
-      } catch (e) {
-        console.warn('Could not play TTS audio:', e);
-      }
+      } catch {}
     }
   }, []);
 
@@ -84,16 +143,15 @@ const Chat = () => {
   const sendMessage = async (text) => {
     const question = (text || input).trim();
     if (!question || loading) return;
-
     setMessages(prev => [...prev, { sender: 'user', text: question }]);
     setInput('');
     setLoading(true);
-
     try {
       const res = await axios.post(`${API_URL}/chat`, { question });
       setMessages(prev => [...prev, { sender: 'ai', text: res.data.answer }]);
+      setMessageCount(c => c + 1);
     } catch (err) {
-      const errMsg = err.response?.data?.message || 'Sorry, the AI assistant is unavailable right now. Please try again later.';
+      const errMsg = err.response?.data?.message || 'Sorry, the AI assistant is unavailable right now.';
       setMessages(prev => [...prev, { sender: 'ai', text: `⚠️ ${errMsg}`, isError: true }]);
     }
     setLoading(false);
@@ -110,95 +168,85 @@ const Chat = () => {
   const showSuggestions = messages.length === 1;
 
   return (
-    <div className="animate-fade-in-up" style={{ maxWidth: '820px', margin: '0 auto' }}>
+    <div className="animate-fade-in-up page-wrapper" style={{ maxWidth: '860px', margin: '0 auto' }}>
 
-      {/* Page Header */}
-      <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+      {/* Page header */}
+      <div style={{ marginBottom: '1.75rem', textAlign: 'center' }}>
         <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-          background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)',
-          borderRadius: '50rem', padding: '0.35rem 1rem',
-          fontSize: '0.8rem', fontWeight: 600, color: '#60a5fa',
+          display: 'inline-flex', alignItems: 'center', gap: '0.6rem',
+          background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)',
+          borderRadius: '50rem', padding: '0.38rem 1.1rem',
+          fontSize: '0.8rem', fontWeight: 600, color: '#86efac',
           marginBottom: '1rem',
         }}>
-          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e', display: 'inline-block', animation: 'pulse-glow 2s infinite' }} />
-          AI Assistant · Powered by Gemini
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e', display: 'inline-block', boxShadow: '0 0 8px #22c55e', animation: 'pulse-dot 2s infinite' }} />
+          AI Assistant · Live · Powered by Gemini
         </div>
-        <h1 style={{ fontSize: '2.2rem', fontWeight: 800, fontFamily: 'Space Grotesk, sans-serif', marginBottom: '0.5rem' }}>
+        <h1 style={{ fontSize: '2.4rem', fontWeight: 900, fontFamily: 'Space Grotesk, sans-serif', marginBottom: '0.5rem', letterSpacing: '-0.03em' }}>
           Eye Health <span className="gradient-text">AI Chat</span>
         </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', maxWidth: '500px', margin: '0 auto' }}>
-          Ask me anything about eye conditions, symptoms, or treatments. I'm here 24/7.
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', maxWidth: '480px', margin: '0 auto' }}>
+          Ask me anything about eye conditions, symptoms, or treatments. Here 24/7.
         </p>
       </div>
 
-      {/* Chat Card */}
-      <div className="glass-card-elevated" style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '600px' }}>
+      {/* Chat container */}
+      <div className="glass-card-elevated" style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '620px', boxShadow: '0 30px 80px rgba(0,0,0,0.5)' }}>
 
         {/* Header bar */}
         <div style={{
           padding: '1rem 1.5rem',
           borderBottom: '1px solid var(--border-subtle)',
-          display: 'flex', alignItems: 'center', gap: '0.75rem',
-          background: 'rgba(59, 130, 246, 0.05)',
+          display: 'flex', alignItems: 'center', gap: '0.875rem',
+          background: 'rgba(0,119,255,0.04)',
           flexShrink: 0,
         }}>
           <div style={{
-            width: 40, height: 40, borderRadius: '50%',
+            width: 44, height: 44, borderRadius: '50%',
             background: 'var(--gradient-primary)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '1.1rem', boxShadow: 'var(--glow-sm)', flexShrink: 0,
-          }}>🤖</div>
+            fontSize: '1.2rem', boxShadow: 'var(--glow-sm)',
+            flexShrink: 0, position: 'relative',
+          }}>
+            🤖
+            <span style={{
+              position: 'absolute', bottom: 0, right: 0,
+              width: 12, height: 12, borderRadius: '50%',
+              background: '#22c55e', border: '2px solid var(--bg-elevated)',
+              boxShadow: '0 0 8px #22c55e',
+            }} />
+          </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: '0.95rem', fontFamily: 'Space Grotesk, sans-serif' }}>
+            <div style={{ fontWeight: 800, fontSize: '0.95rem', fontFamily: 'Space Grotesk, sans-serif', color: '#e0f2fe' }}>
               AI Medical Assistant
             </div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-              Specialized in eye health · Not a replacement for professional advice
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
+              Specialized in eye health · {messageCount} responses today · Not a medical replacement
             </div>
           </div>
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e', animation: 'pulse-glow 2s infinite' }} />
-            <span style={{ fontSize: '0.75rem', color: '#86efac', fontWeight: 600 }}>Online</span>
+          <div style={{ marginLeft: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
+            <span style={{ fontSize: '0.72rem', color: '#86efac', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e', display: 'inline-block', animation: 'pulse-dot 2s infinite' }} />
+              Online
+            </span>
           </div>
         </div>
 
-        {/* Messages */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        {/* Messages area */}
+        <div className="chat-scroll" style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
 
           {messages.map((msg, idx) => (
-            <div key={idx} className="animate-fade-in" style={{
-              display: 'flex',
-              justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-              alignItems: 'flex-end', gap: '0.5rem',
-            }}>
-              {msg.sender === 'ai' && (
-                <div style={{
-                  width: 30, height: 30, flexShrink: 0, borderRadius: '50%',
-                  background: 'var(--gradient-primary)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '0.85rem', boxShadow: 'var(--glow-sm)',
-                }}>🤖</div>
-              )}
-              <div
-                className={msg.sender === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}
-                style={{
-                  maxWidth: '75%', whiteSpace: 'pre-wrap', lineHeight: 1.65,
-                  ...(msg.isError ? { borderColor: 'rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.08)' } : {}),
-                }}
-              >
-                {msg.text}
-              </div>
-            </div>
+            <MessageBubble key={idx} msg={msg} />
           ))}
 
           {/* Typing indicator */}
           {loading && (
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.6rem', animation: 'fade-in 0.3s ease' }}>
               <div style={{
-                width: 30, height: 30, flexShrink: 0, borderRadius: '50%',
+                width: 34, height: 34, borderRadius: '50%',
                 background: 'var(--gradient-primary)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem',
+                boxShadow: 'var(--glow-sm)',
               }}>🤖</div>
               <div className="chat-bubble-ai" style={{ padding: 0 }}>
                 <TypingDots />
@@ -206,32 +254,35 @@ const Chat = () => {
             </div>
           )}
 
-          {/* Suggested questions — only show on first load */}
+          {/* Suggestion chips */}
           {showSuggestions && !loading && (
-            <div style={{ marginTop: '0.5rem' }}>
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.6rem', paddingLeft: '38px' }}>
-                Try asking:
+            <div style={{ marginTop: '0.75rem', paddingLeft: '46px' }}>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.75rem', fontWeight: 500 }}>
+                💡 Try asking about:
               </p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', paddingLeft: '38px' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                 {SUGGESTIONS.map((s, i) => (
                   <button
                     key={i}
-                    onClick={() => sendMessage(s)}
+                    onClick={() => sendMessage(s.text)}
                     style={{
-                      background: 'rgba(59,130,246,0.08)',
-                      border: '1px solid rgba(59,130,246,0.2)',
+                      display: 'flex', alignItems: 'center', gap: '0.4rem',
+                      background: 'rgba(0,119,255,0.07)',
+                      border: '1px solid rgba(0,119,255,0.18)',
                       color: '#93c5fd',
                       borderRadius: '50rem',
-                      padding: '0.35rem 0.9rem',
-                      fontSize: '0.78rem',
+                      padding: '0.4rem 1rem',
+                      fontSize: '0.8rem',
                       fontWeight: 500,
                       cursor: 'pointer',
                       transition: 'all 0.2s',
+                      whiteSpace: 'nowrap',
                     }}
-                    onMouseEnter={e => Object.assign(e.currentTarget.style, { background: 'rgba(59,130,246,0.18)', borderColor: 'rgba(59,130,246,0.4)' })}
-                    onMouseLeave={e => Object.assign(e.currentTarget.style, { background: 'rgba(59,130,246,0.08)', borderColor: 'rgba(59,130,246,0.2)' })}
+                    onMouseEnter={e => Object.assign(e.currentTarget.style, { background: 'rgba(0,119,255,0.16)', borderColor: 'rgba(0,119,255,0.4)', color: '#bfdbfe', transform: 'translateY(-1px)' })}
+                    onMouseLeave={e => Object.assign(e.currentTarget.style, { background: 'rgba(0,119,255,0.07)', borderColor: 'rgba(0,119,255,0.18)', color: '#93c5fd', transform: 'translateY(0)' })}
                   >
-                    {s}
+                    <span style={{ fontSize: '0.85rem' }}>{s.icon}</span>
+                    {s.text}
                   </button>
                 ))}
               </div>
@@ -241,57 +292,82 @@ const Chat = () => {
           <div ref={bottomRef} />
         </div>
 
-        {/* Input */}
+        {/* Input area */}
         <div style={{
           borderTop: '1px solid var(--border-subtle)',
-          padding: '0.875rem 1rem',
+          padding: '1rem 1.25rem',
           display: 'flex', gap: '0.625rem',
-          background: 'rgba(255,255,255,0.02)',
+          background: 'rgba(0,0,0,0.3)',
           flexShrink: 0,
-          alignItems: 'center',
+          alignItems: 'flex-end',
         }}>
-          <input
-            ref={inputRef}
-            type="text"
-            className="input-field"
-            placeholder="Ask about eye conditions, treatments, symptoms..."
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={loading}
-            style={{ borderRadius: '50rem', flex: 1 }}
-          />
-          {/* Microphone button */}
+          <div style={{ flex: 1, position: 'relative' }}>
+            <input
+              ref={inputRef}
+              type="text"
+              className="input-field"
+              placeholder="Ask about eye conditions, treatments, symptoms..."
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={loading}
+              style={{
+                borderRadius: '0.875rem',
+                paddingRight: '3rem',
+                background: 'rgba(255,255,255,0.05)',
+              }}
+            />
+            {input && (
+              <button
+                onClick={() => setInput('')}
+                style={{
+                  position: 'absolute', right: '0.75rem', top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none', border: 'none',
+                  cursor: 'pointer', color: 'var(--text-muted)',
+                  fontSize: '1rem',
+                  transition: 'color 0.2s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
           <VoiceButton
             onTranscript={handleVoiceTranscript}
             onResponse={handleVoiceResponse}
             onError={handleVoiceError}
             disabled={loading}
           />
+
           <button
             className="btn-primary"
             onClick={() => sendMessage()}
             disabled={loading || !input.trim()}
             style={{
-              padding: '0.75rem 1.25rem',
-              borderRadius: '50rem',
+              padding: '0.75rem 1.5rem',
+              borderRadius: '0.875rem',
               flexShrink: 0,
-              opacity: loading || !input.trim() ? 0.6 : 1,
-              transition: 'opacity 0.2s',
+              opacity: loading || !input.trim() ? 0.5 : 1,
+              transition: 'all 0.2s',
+              fontSize: '0.9rem',
             }}
           >
-            {loading ? '...' : 'Send ↑'}
+            {loading ? (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.35)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin-slow 0.7s linear infinite', display: 'inline-block' }} />
+              </span>
+            ) : '↑ Send'}
           </button>
-          {/* Hidden audio player for TTS playback */}
           <audio ref={audioRef} style={{ display: 'none' }} />
         </div>
       </div>
 
       {/* Disclaimer */}
-      <p style={{
-        textAlign: 'center', fontSize: '0.73rem',
-        color: 'var(--text-muted)', marginTop: '1rem', lineHeight: 1.6,
-      }}>
+      <p style={{ textAlign: 'center', fontSize: '0.73rem', color: 'var(--text-dim)', marginTop: '1rem', lineHeight: 1.6 }}>
         ⚠️ This AI assistant is for informational purposes only and does not constitute medical advice.
         Always consult a licensed ophthalmologist for diagnosis and treatment.
       </p>
@@ -299,7 +375,7 @@ const Chat = () => {
       <style>{`
         @keyframes typingBounce {
           0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-          30% { transform: translateY(-6px); opacity: 1; }
+          30%            { transform: translateY(-6px); opacity: 1; }
         }
       `}</style>
     </div>

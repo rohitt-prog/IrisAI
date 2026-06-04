@@ -18,9 +18,16 @@ function App() {
   return (
     <TokenProvider>
       <Router>
-        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-base)' }}>
+        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-base)', position: 'relative' }}>
+          {/* Ambient background orbs */}
+          <div className="ambient-bg" aria-hidden="true">
+            <div className="orb orb-1" />
+            <div className="orb orb-2" />
+            <div className="orb orb-3" />
+          </div>
+
           <Navbar />
-          <main style={{ flex: 1, maxWidth: '1200px', width: '100%', margin: '0 auto', padding: '2rem 1.25rem' }}>
+          <main style={{ flex: 1, maxWidth: '1280px', width: '100%', margin: '0 auto', padding: '2.5rem 1.5rem', position: 'relative', zIndex: 1 }}>
             <Routes>
               <Route path="/" element={<Navigate to="/upload" />} />
               <Route path="/login" element={<Login />} />
