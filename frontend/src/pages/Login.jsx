@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { API_URL } from '../config';
 import Logo from '../components/Logo';
 import { useTokens } from '../context/TokenContext';
+import LoginIntroAnimation from '../components/LoginIntroAnimation';
 
 const features = [
   { icon: '🧠', text: 'AI-powered eye disease detection' },
@@ -18,6 +19,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showIntro, setShowIntro] = useState(false);
   const navigate = useNavigate();
   const { fetchTokens } = useTokens();
 
@@ -30,7 +32,8 @@ const Login = () => {
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
       await fetchTokens();
-      navigate('/dashboard');
+      // Show the cinematic intro before navigating
+      setShowIntro(true);
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
     } finally {
@@ -38,7 +41,14 @@ const Login = () => {
     }
   };
 
+  // Called by LoginIntroAnimation when its sequence finishes
+  const handleIntroDone = () => {
+    navigate('/dashboard');
+  };
+
   return (
+    <>
+      {showIntro && <LoginIntroAnimation onComplete={handleIntroDone} />}
     <div style={{
       display: 'flex',
       justifyContent: 'center',
@@ -198,6 +208,7 @@ const Login = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
