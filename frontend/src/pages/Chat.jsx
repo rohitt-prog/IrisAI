@@ -10,7 +10,7 @@ const SUGGESTIONS = [
   { text: "What causes diabetic retinopathy?",           icon: "🩸" },
   { text: "How often should I get an eye exam?",         icon: "📅" },
   { text: "What is keratoconus?",                        icon: "🔬" },
-  { text: "Can uveitis be cured?",                       icon: "🏥" },
+  { text: "How can I protect my eyes from screen strain?",  icon: "🖥️" },
 ];
 
 const TypingDots = () => (

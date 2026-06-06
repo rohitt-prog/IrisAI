@@ -13,7 +13,6 @@ const conditionColors = {
   Cataract: '#f59e0b',
   Glaucoma: '#ef4444',
   'Diabetic Retinopathy': '#dc2626',
-  Uveitis: '#a855f7',
   Keratoconus: '#06b6d4',
 };
 

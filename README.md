@@ -16,7 +16,7 @@
 
 | Feature | Details |
 |---|---|
-| 🩺 **6 Conditions Detected** | Normal, Glaucoma, Cataract, Diabetic Retinopathy, Uveitis, Keratoconus |
+| 🩺 **5 Conditions Detected** | Normal, Glaucoma, Cataract, Diabetic Retinopathy, Keratoconus |
 | ⚡ **Instant AI Analysis** | Deep learning classification with confidence score + per-class probability breakdown |
 | 🤖 **Generative AI Explanations** | Google Gemini explains each result in clear, patient-friendly language |
 | 🎙️ **Multilingual Voice Chat** | Speak to the AI assistant in 10+ languages (Hindi, Spanish, etc.) with voice responses |
@@ -231,7 +231,7 @@ The system supports two modes:
 
 **Required class order** (must match your training labels):
 ```python
-['Normal', 'Glaucoma', 'Cataract', 'Diabetic Retinopathy', 'Uveitis', 'Keratoconus']
+['Normal', 'Glaucoma', 'Cataract', 'Diabetic Retinopathy', 'Keratoconus']
 ```
 
 **Expected input:** `300 × 300` RGB image, standard ImageNet normalization.

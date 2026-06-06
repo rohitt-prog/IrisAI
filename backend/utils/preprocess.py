@@ -28,7 +28,7 @@ if os.path.exists(MODEL_PATH) and os.path.exists(INFO_PATH):
 
         print("Initializing efficientnet_b3 architecture via timm CustomModel...")
         class CustomModel(nn.Module):
-            def __init__(self, num_classes=6):
+            def __init__(self, num_classes=5):
                 super().__init__()
                 self.backbone = timm.create_model('efficientnet_b3', pretrained=False, num_classes=0)
                 self.head = nn.Sequential(
@@ -45,7 +45,7 @@ if os.path.exists(MODEL_PATH) and os.path.exists(INFO_PATH):
                 x = self.backbone(x)
                 return self.head(x)
 
-        model = CustomModel(num_classes=len(classes_from_json) if classes_from_json else 6)
+        model = CustomModel(num_classes=len(classes_from_json) if classes_from_json else 5)
         
         print(f"Loading weights from {MODEL_PATH}...")
         device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
@@ -70,7 +70,7 @@ if os.path.exists(MODEL_PATH) and os.path.exists(INFO_PATH):
         model = None
 
 FRONTEND_CLASSES = [
-    'Normal', 'Glaucoma', 'Cataract', 'Diabetic Retinopathy', 'Uveitis', 'Keratoconus'
+    'Normal', 'Glaucoma', 'Cataract', 'Diabetic Retinopathy', 'Keratoconus'
 ]
 
 def format_class_name(c):

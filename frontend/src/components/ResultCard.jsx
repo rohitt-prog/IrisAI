@@ -3,7 +3,6 @@ const conditionInfo = {
   Cataract: { icon: '🌫️', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)', border: 'rgba(245,158,11,0.25)' },
   Glaucoma: { icon: '🔴', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.12)', border: 'rgba(239,68,68,0.25)' },
   'Diabetic Retinopathy': { icon: '🩸', color: '#dc2626', bg: 'rgba(220, 38, 38, 0.12)', border: 'rgba(220,38,38,0.25)' },
-  Uveitis: { icon: '💜', color: '#a855f7', bg: 'rgba(168, 85, 247, 0.12)', border: 'rgba(168,85,247,0.25)' },
   Keratoconus: { icon: '🌀', color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.12)', border: 'rgba(6,182,212,0.25)' },
 };
 

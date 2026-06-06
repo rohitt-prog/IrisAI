@@ -6,8 +6,8 @@ import { useState, useEffect } from 'react';
 const features = [
   {
     icon: '🩺',
-    title: '6 Conditions Detected',
-    desc: 'Cataract, Glaucoma, Diabetic Retinopathy, Uveitis, Keratoconus & Normal',
+    title: '5 Conditions Detected',
+    desc: 'Cataract, Glaucoma, Diabetic Retinopathy, Keratoconus & Normal',
     color: '#60a5fa',
     glow: 'rgba(96,165,250,0.15)',
     gradient: 'linear-gradient(135deg, rgba(96,165,250,0.15), rgba(96,165,250,0.05))',
@@ -56,13 +56,13 @@ const features = [
 
 const stats = [
   { label: 'Model Accuracy',  value: '94.2%', icon: '🎯', color: '#00e5ff' },
-  { label: 'Conditions',      value: '6',      icon: '👁️',  color: '#a78bfa' },
+  { label: 'Conditions',      value: '5',      icon: '👁️',  color: '#a78bfa' },
   { label: 'Avg. Analysis',   value: '<3s',    icon: '⚡',  color: '#fbbf24' },
 ];
 
 const howItWorks = [
   { num: 1, icon: '📸', title: 'Upload Eye Image', desc: 'Select a clear, high-resolution photo of the anterior eye segment.' },
-  { num: 2, icon: '🧠', title: 'AI Analyzes',      desc: 'EfficientNet-B3 processes the image and classifies across 6 conditions.' },
+  { num: 2, icon: '🧠', title: 'AI Analyzes',      desc: 'EfficientNet-B3 processes the image and classifies across 5 conditions.' },
   { num: 3, icon: '📊', title: 'Results Generated', desc: 'View predictions, confidence scores, probability charts and AI explanations.' },
   { num: 4, icon: '📄', title: 'Download Report',   desc: 'Get a professional PDF with embedded QR code — ready to share with your doctor.' },
 ];
@@ -209,7 +209,7 @@ const Dashboard = () => {
             lineHeight: 1.65,
             fontWeight: 400,
           }}>
-            Analyze anterior eye health images, detect 6 conditions instantly, and generate comprehensive clinical reports powered by AI.
+            Analyze anterior eye health images, detect 5 conditions instantly, and generate comprehensive clinical reports powered by AI.
           </p>
 
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
