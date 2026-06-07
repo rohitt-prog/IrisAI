@@ -16,8 +16,9 @@
 
 | Feature | Details |
 |---|---|
-| 🩺 **5 Conditions Detected** | Normal, Glaucoma, Cataract, Diabetic Retinopathy, Keratoconus |
-| ⚡ **Instant AI Analysis** | Deep learning classification with confidence score + per-class probability breakdown |
+| 🩺 **5 Conditions Detected** | Cataract, Diabetic Retinopathy, Glaucoma, Keratoconus, Normal |
+| 🧠 **3-Model Ensemble** | DenseNet-121 (95.86%) + EfficientNet-B4 (95.30%) + ResNet-50 (95.09%) — weighted average |
+| ⚡ **Instant AI Analysis** | Deep learning ensemble classification with confidence score + per-class probability breakdown |
 | 🤖 **Generative AI Explanations** | Google Gemini explains each result in clear, patient-friendly language |
 | 🎙️ **Multilingual Voice Chat** | Speak to the AI assistant in 10+ languages (Hindi, Spanish, etc.) with voice responses |
 | 💬 **AI Chat Assistant** | Dedicated chat page — ask any eye-health question anytime, powered by Gemini |
@@ -44,8 +45,10 @@ projectDeep/
 │   ├── .env.example          # Environment variable template (with docs)
 │   ├── Procfile              # Gunicorn config (for deployment)
 │   ├── model/
-│   │   ├── eye_disease_model_v4.pth   # ← Place your trained PyTorch model here
-│   │   └── class_info.json            # ← Class label metadata
+│   │   ├── DenseNet-121_best.pth      # Trained DenseNet-121 (val acc: 95.86%)
+│   │   ├── EfficientNet-B4_best.pth   # Trained EfficientNet-B4 (val acc: 95.30%)
+│   │   ├── ResNet-50_best.pth         # Trained ResNet-50 (val acc: 95.09%)
+│   │   └── class_info.json            # Class label metadata & ensemble config
 │   ├── routes/
 │   │   ├── auth.py           # /api/auth — register & login (with validation)
 │   │   ├── predict.py        # /api/predict — image upload & AI prediction
@@ -222,22 +225,32 @@ IrisAI features a sophisticated voice-to-voice pipeline that allows users to int
 
 ## 🤖 AI Model Integration
 
-The system supports two modes:
+The system uses a **3-model weighted ensemble** for robust, high-accuracy predictions.
 
-### ✅ Real Model (Recommended)
-1. Train a PyTorch EfficientNet-B3 model on 6 eye condition classes (in the exact order below).
-2. Save the weights as `backend/model/eye_disease_model_v4.pth` and class info as `backend/model/class_info.json`.
-3. The app auto-loads it on startup.
+### 🧠 Trained Ensemble Models
 
-**Required class order** (must match your training labels):
+| Model | Architecture | Val Accuracy | Ensemble Weight | File |
+|-------|-------------|--------------|-----------------|------|
+| DenseNet-121 | `densenet121` (timm) | **95.86%** | 0.3341 | `DenseNet-121_best.pth` |
+| EfficientNet-B4 | `efficientnet_b4` (timm) | **95.30%** | 0.3322 | `EfficientNet-B4_best.pth` |
+| ResNet-50 | `resnet50` (timm) | **95.09%** | 0.3317 | `ResNet-50_best.pth` |
+
+**Ensemble strategy:** Weighted average of softmax probabilities, with each model's weight proportional to its validation accuracy. The model with the highest accuracy contributes the most to the final prediction.
+
+**Detected conditions (5 classes):**
 ```python
-['Normal', 'Glaucoma', 'Cataract', 'Diabetic Retinopathy', 'Keratoconus']
+['Cataract', 'Diabetic_Retinopathy', 'Glaucoma', 'Keratoconus', 'Normal']
 ```
 
-**Expected input:** `300 × 300` RGB image, standard ImageNet normalization.
+**Expected input:** `380 × 380` RGB image, standard ImageNet normalization (`mean=[0.485, 0.456, 0.406]`, `std=[0.229, 0.224, 0.225]`).
+
+### ✅ Setup
+1. Place all three `.pth` files inside `backend/model/`.
+2. Ensure `backend/model/class_info.json` is present (already included in repo).
+3. The app auto-loads all models on startup. The health endpoint reports how many models are loaded.
 
 ### 🔁 Mock Fallback
-If no valid PyTorch model is found, the system uses random mock predictions — useful for UI development without a trained model.
+If no valid PyTorch model files are found, the system uses random mock predictions — useful for UI development without trained weights.
 
 ---
 
@@ -266,7 +279,8 @@ All endpoints are prefixed with `/api`.
 
 ### Backend
 - **Flask** — REST API framework
-- **PyTorch** — Deep learning model inference (EfficientNet-B3)
+- **PyTorch** — Deep learning model inference
+- **timm** — Model architectures: DenseNet-121, EfficientNet-B4, ResNet-50 (weighted ensemble)
 - **Google Gemini** (`google-genai`) — AI explanations and chat (with LRU caching)
 - **MongoDB + PyMongo** — Database for users & scan history
 - **Flask-JWT-Extended** — JWT authentication
