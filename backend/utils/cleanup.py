@@ -69,18 +69,23 @@ def cleanup_orphaned_reports():
 
     deleted = 0
 
+    # Collect all report IDs to check from filenames first
+    files_to_check = []
     for filename in os.listdir(reports_dir):
         if filename.startswith('qr_'):
-            # Extract report_id from qr_REPORT_ID.png
             report_id = filename[3:-4]  # Remove 'qr_' prefix and '.png' suffix
         elif filename.endswith('.pdf'):
-            # Extract report_id from REPORT_ID.pdf
             report_id = filename[:-4]  # Remove '.pdf' suffix
         else:
             continue
+        files_to_check.append((filename, report_id))
 
-        # Check if report exists in database
-        with app.app_context():
+    if not files_to_check:
+        return 0
+
+    # Open one app_context for all DB queries (not one per file)
+    with app.app_context():
+        for filename, report_id in files_to_check:
             record = app.db.history.find_one({"report_id": report_id})
 
             if not record:

@@ -125,6 +125,14 @@ def predict():
     }
     db.history.insert_one(report_data)
 
+    # ── Clean up uploaded file (path is saved in DB; file not needed on disk) ──
+    if os.path.exists(filepath):
+        try:
+            os.remove(filepath)
+            report_data['image_path'] = None  # Don't expose deleted path in response
+        except Exception as cleanup_err:
+            logger.warning(f"Failed to delete upload after scan: {cleanup_err}")
+
     # ── Build response ───────────────────────────────────────────────────────
     report_data.pop('_id', None)
     report_data['date'] = report_data['date'].isoformat()

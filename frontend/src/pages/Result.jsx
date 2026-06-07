@@ -31,8 +31,26 @@ const Result = () => {
     );
   }
 
-  const handleDownload = () => {
-    window.location.href = `${API_URL}/report/download-report?id=${data.report_id}`;
+  const handleDownload = async () => {
+    const authToken = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API_URL}/report/download-report?id=${data.report_id}`, {
+        headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+      });
+      if (!res.ok) {
+        alert('Failed to download report. Please try again.');
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Eye_Health_Report_${data.report_id}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Download failed. Please check your connection.');
+    }
   };
 
   return (

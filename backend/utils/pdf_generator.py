@@ -79,7 +79,14 @@ def create_pdf_report(data, user_name):
     c.setFont("Helvetica-Bold", 14)
     c.drawString(310, height - 230, f"Diagnosis: {prediction}")
     c.setFont("Helvetica", 10)
-    c.drawString(310, height - 245, f"Confidence: {confidence}")
+    # Format confidence as percentage (stored as float 0.0–1.0)
+    try:
+        conf_val = float(confidence)
+        conf_str = f"{conf_val * 100:.1f}%" if conf_val <= 1.0 else f"{conf_val:.1f}%"
+    except (TypeError, ValueError):
+        conf_str = str(confidence)
+    c.drawString(310, height - 245, f"Confidence: {conf_str}")
+
     
     # Probabilities
     c.setFillColor(colors.HexColor('#475569'))

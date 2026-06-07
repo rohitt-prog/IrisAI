@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { API_URL } from '../config';
@@ -39,11 +39,26 @@ const ImageUploader = () => {
     if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
   };
 
+  const previewUrlRef = useRef(null);
+
   const handleFile = (selectedFile) => {
+    // Revoke previous object URL to avoid memory leak
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+    }
+    const url = URL.createObjectURL(selectedFile);
+    previewUrlRef.current = url;
     setFile(selectedFile);
-    setPreview(URL.createObjectURL(selectedFile));
+    setPreview(url);
     setError(null);
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    };
+  }, []);
 
   const isLoggedIn = !!localStorage.getItem('token');
   const outOfTokens = isLoggedIn && tokens !== null && tokens <= 0;

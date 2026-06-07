@@ -62,7 +62,7 @@ const stats = [
 
 const howItWorks = [
   { num: 1, icon: '📸', title: 'Upload Eye Image', desc: 'Select a clear, high-resolution photo of the anterior eye segment.' },
-  { num: 2, icon: '🧠', title: 'AI Analyzes',      desc: 'EfficientNet-B3 processes the image and classifies across 5 conditions.' },
+  { num: 2, icon: '🧠', title: 'AI Analyzes',      desc: 'An ensemble of DenseNet-121, EfficientNet-B4 & ResNet-50 classifies the image across 5 conditions.' },
   { num: 3, icon: '📊', title: 'Results Generated', desc: 'View predictions, confidence scores, probability charts and AI explanations.' },
   { num: 4, icon: '📄', title: 'Download Report',   desc: 'Get a professional PDF with embedded QR code — ready to share with your doctor.' },
 ];

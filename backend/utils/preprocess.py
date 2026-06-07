@@ -90,33 +90,18 @@ try:
 
         print(f"Loading {cfg['name']} from {pth_path} …")
 
-        # Build backbone via timm (no pretrained weights – we load our own)
-        backbone = timm.create_model(cfg["arch"], pretrained=False, num_classes=0)
-        head = nn.Sequential(
-            nn.BatchNorm1d(cfg["feature_dim"]),
-            nn.Dropout(0.3),
-            nn.Linear(cfg["feature_dim"], 512),
-            nn.ReLU(),
-            nn.BatchNorm1d(512),
-            nn.Dropout(0.2),
-            nn.Linear(512, NUM_CLASSES),
-        )
+        # ── Load as a complete timm model (backbone + built-in classifier) ──
+        # The .pth files were saved from full timm models with num_classes=NUM_CLASSES,
+        # so we create the same architecture and load the state dict directly.
+        m = timm.create_model(cfg["arch"], pretrained=False, num_classes=NUM_CLASSES)
 
-        class _Model(nn.Module):
-            def __init__(self, backbone, head):
-                super().__init__()
-                self.backbone = backbone
-                self.head = head
-            def forward(self, x):
-                return self.head(self.backbone(x))
-
-        m = _Model(backbone, head)
-
-        state = torch.load(pth_path, map_location=device)
+        state = torch.load(pth_path, map_location=device, weights_only=False)
         # Support checkpoints saved as {"model_state_dict": ...} or plain state_dict
         if isinstance(state, dict) and "model_state_dict" in state:
             state = state["model_state_dict"]
-        m.load_state_dict(state)
+
+
+        result = m.load_state_dict(state, strict=True)
         m.to(device)
         m.eval()
         models.append(m)
@@ -130,6 +115,8 @@ except Exception as e:
     print(f"⚠️  Failed to load ensemble models: {e}. Using mock predictions.")
     traceback.print_exc()
     models = []
+    print("\n🔴 RUNNING IN MOCK MODE — all predictions are RANDOM (not real AI)")
+    print("   Fix the error above to enable real model inference.")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Class name helpers
@@ -201,4 +188,8 @@ def predict_disease(image_path):
     return prediction, confidence, probabilities
 
 # Back-compat: expose a single `model` variable for health-check in app.py
-model = models[0] if models else None
+# This is resolved lazily so it reflects the actual loaded state
+def _get_first_model():
+    return models[0] if models else None
+
+model = _get_first_model()
