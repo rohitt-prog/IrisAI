@@ -4,70 +4,136 @@ import os
 import json
 
 # ─────────────────────────────────────────────────────────────────────────────
-# PyTorch Model Integration
+# Ensemble Model Integration (DenseNet-121 + EfficientNet-B4 + ResNet-50)
+# Weighted average based on individual validation accuracies
 # ─────────────────────────────────────────────────────────────────────────────
 
-MODEL_PATH = os.path.join('model', 'eye_disease_model_v4.pth')
-INFO_PATH = os.path.join('model', 'class_info.json')
+MODEL_DIR  = 'model'
+INFO_PATH  = os.path.join(MODEL_DIR, 'class_info.json')
 
-model = None
-device = None
+# Individual model weight files
+MODEL_CONFIGS = [
+    {
+        "name":     "DenseNet-121",
+        "arch":     "densenet121",
+        "file":     "DenseNet-121_best.pth",
+        "weight":   0.9586,   # val accuracy used as ensemble weight
+        "feature_dim": 1024,
+    },
+    {
+        "name":     "EfficientNet-B4",
+        "arch":     "efficientnet_b4",
+        "file":     "EfficientNet-B4_best.pth",
+        "weight":   0.9530,
+        "feature_dim": 1792,
+    },
+    {
+        "name":     "ResNet-50",
+        "arch":     "resnet50",
+        "file":     "ResNet-50_best.pth",
+        "weight":   0.9509,
+        "feature_dim": 2048,
+    },
+]
+
+# Normalise weights so they sum to 1
+_total_weight = sum(c["weight"] for c in MODEL_CONFIGS)
+for _cfg in MODEL_CONFIGS:
+    _cfg["weight"] /= _total_weight
+
+# ─────────────────────────────────────────────────────────────────────────────
+
+models  = []          # list of loaded nn.Module instances (parallel to MODEL_CONFIGS)
+device  = None
 transform = None
 classes_from_json = []
 
-if os.path.exists(MODEL_PATH) and os.path.exists(INFO_PATH):
+# Load class names
+if os.path.exists(INFO_PATH):
     try:
-        import torch
-        import torch.nn as nn
-        import timm
-
-        print("Loading class info...")
         with open(INFO_PATH, 'r') as f:
             info = json.load(f)
             classes_from_json = info.get("class_names", [])
-
-        print("Initializing efficientnet_b3 architecture via timm CustomModel...")
-        class CustomModel(nn.Module):
-            def __init__(self, num_classes=5):
-                super().__init__()
-                self.backbone = timm.create_model('efficientnet_b3', pretrained=False, num_classes=0)
-                self.head = nn.Sequential(
-                    nn.BatchNorm1d(1536),
-                    nn.Dropout(0.2),
-                    nn.Linear(1536, 512),
-                    nn.ReLU(),
-                    nn.BatchNorm1d(512),
-                    nn.Dropout(0.2),
-                    nn.Linear(512, num_classes)
-                )
-
-            def forward(self, x):
-                x = self.backbone(x)
-                return self.head(x)
-
-        model = CustomModel(num_classes=len(classes_from_json) if classes_from_json else 5)
-        
-        print(f"Loading weights from {MODEL_PATH}...")
-        device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
-        model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
-        model.to(device)
-        model.eval()
-
-        print(f"✅ AI model loaded successfully on {device}")
-        
-        # NOTE: torchvision transforms are still used below, so they need to be imported
-        from torchvision import transforms
-        transform = transforms.Compose([
-            transforms.Resize((300, 300)),
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-        ])
-        
+        print(f"✅ Class info loaded: {classes_from_json}")
     except Exception as e:
-        import traceback
-        print(f"⚠️  Failed to load model: {e}. Using mock predictions.")
-        traceback.print_exc()
-        model = None
+        print(f"⚠️  Could not load class_info.json: {e}")
+
+NUM_CLASSES = len(classes_from_json) if classes_from_json else 5
+
+# ─── Try loading all three models ────────────────────────────────────────────
+try:
+    import torch
+    import torch.nn as nn
+    import timm
+    from torchvision import transforms as T
+
+    device = torch.device(
+        "cuda"  if torch.cuda.is_available()               else
+        "mps"   if torch.backends.mps.is_available()       else
+        "cpu"
+    )
+    print(f"🖥️  Using device: {device}")
+
+    # ── Input transform (same for all models — largest required size is 380 for B4)
+    transform = T.Compose([
+        T.Resize((380, 380)),
+        T.ToTensor(),
+        T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+    ])
+
+    for cfg in MODEL_CONFIGS:
+        pth_path = os.path.join(MODEL_DIR, cfg["file"])
+        if not os.path.exists(pth_path):
+            print(f"⚠️  Model file not found, skipping: {pth_path}")
+            models.append(None)
+            continue
+
+        print(f"Loading {cfg['name']} from {pth_path} …")
+
+        # Build backbone via timm (no pretrained weights – we load our own)
+        backbone = timm.create_model(cfg["arch"], pretrained=False, num_classes=0)
+        head = nn.Sequential(
+            nn.BatchNorm1d(cfg["feature_dim"]),
+            nn.Dropout(0.3),
+            nn.Linear(cfg["feature_dim"], 512),
+            nn.ReLU(),
+            nn.BatchNorm1d(512),
+            nn.Dropout(0.2),
+            nn.Linear(512, NUM_CLASSES),
+        )
+
+        class _Model(nn.Module):
+            def __init__(self, backbone, head):
+                super().__init__()
+                self.backbone = backbone
+                self.head = head
+            def forward(self, x):
+                return self.head(self.backbone(x))
+
+        m = _Model(backbone, head)
+
+        state = torch.load(pth_path, map_location=device)
+        # Support checkpoints saved as {"model_state_dict": ...} or plain state_dict
+        if isinstance(state, dict) and "model_state_dict" in state:
+            state = state["model_state_dict"]
+        m.load_state_dict(state)
+        m.to(device)
+        m.eval()
+        models.append(m)
+        print(f"✅ {cfg['name']} loaded (weight={cfg['weight']:.4f})")
+
+    loaded_count = sum(1 for m in models if m is not None)
+    print(f"✅ Ensemble ready: {loaded_count}/{len(MODEL_CONFIGS)} models loaded on {device}")
+
+except Exception as e:
+    import traceback
+    print(f"⚠️  Failed to load ensemble models: {e}. Using mock predictions.")
+    traceback.print_exc()
+    models = []
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Class name helpers
+# ─────────────────────────────────────────────────────────────────────────────
 
 FRONTEND_CLASSES = [
     'Normal', 'Glaucoma', 'Cataract', 'Diabetic Retinopathy', 'Keratoconus'
@@ -83,8 +149,18 @@ if classes_from_json:
 else:
     CLASSES = FRONTEND_CLASSES
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Inference
+# ─────────────────────────────────────────────────────────────────────────────
+
 def predict_disease(image_path):
-    if model is not None and transform is not None:
+    """
+    Run weighted ensemble inference.
+    Returns (predicted_class, confidence, {class: prob}) or falls back to mock.
+    """
+    active_models = [(cfg, m) for cfg, m in zip(MODEL_CONFIGS, models) if m is not None]
+
+    if active_models and transform is not None:
         try:
             import torch
             import torch.nn.functional as F
@@ -93,25 +169,36 @@ def predict_disease(image_path):
             img = Image.open(image_path).convert('RGB')
             img_tensor = transform(img).unsqueeze(0).to(device)
 
+            weighted_probs = np.zeros(NUM_CLASSES, dtype=np.float64)
             with torch.no_grad():
-                outputs = model(img_tensor)
-                probs = F.softmax(outputs, dim=1)[0]
-                
-            raw_preds = probs.cpu().numpy()
-            pred_index = int(np.argmax(raw_preds))
-            prediction = CLASSES[pred_index]
-            confidence = float(raw_preds[pred_index])
-            probabilities = { CLASSES[i]: round(float(raw_preds[i]), 4) for i in range(len(CLASSES)) }
-            return prediction, round(confidence, 4), probabilities
-        except Exception as e:
-            print(f"⚠️  Inference error: {e}. Falling back to mock.")
+                for cfg, m in active_models:
+                    logits = m(img_tensor)
+                    probs  = F.softmax(logits, dim=1)[0].cpu().numpy()
+                    weighted_probs += cfg["weight"] * probs
 
-    # ── Mock fallback ──
+            # Re-normalise (in case any model was skipped)
+            total_weight = sum(cfg["weight"] for cfg, _ in active_models)
+            weighted_probs /= total_weight
+
+            pred_index  = int(np.argmax(weighted_probs))
+            prediction  = CLASSES[pred_index]
+            confidence  = float(weighted_probs[pred_index])
+            probabilities = {
+                CLASSES[i]: round(float(weighted_probs[i]), 4)
+                for i in range(len(CLASSES))
+            }
+            return prediction, round(confidence, 4), probabilities
+
+        except Exception as e:
+            print(f"⚠️  Ensemble inference error: {e}. Falling back to mock.")
+
+    # ── Mock fallback ──────────────────────────────────────────────────────────
     prediction = random.choice(CLASSES)
     confidence = round(random.uniform(0.75, 0.99), 4)
-
-    remaining = 1.0 - confidence
-    per_class = round(remaining / (len(CLASSES) - 1), 4)
-    probabilities = { c: (confidence if c == prediction else per_class) for c in CLASSES }
-
+    remaining  = 1.0 - confidence
+    per_class  = round(remaining / (len(CLASSES) - 1), 4)
+    probabilities = {c: (confidence if c == prediction else per_class) for c in CLASSES}
     return prediction, confidence, probabilities
+
+# Back-compat: expose a single `model` variable for health-check in app.py
+model = models[0] if models else None

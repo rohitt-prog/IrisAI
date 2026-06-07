@@ -7,6 +7,19 @@
     "Normal"
   ],
   "num_classes": 5,
-  "model": "efficientnet_b3",
-  "accuracy": 0.9459
+  "models": {
+    "DenseNet-121": {
+      "file": "DenseNet-121_best.pth",
+      "accuracy": 0.9586
+    },
+    "EfficientNet-B4": {
+      "file": "EfficientNet-B4_best.pth",
+      "accuracy": 0.9530
+    },
+    "ResNet-50": {
+      "file": "ResNet-50_best.pth",
+      "accuracy": 0.9509
+    }
+  },
+  "ensemble_strategy": "weighted_average"
 }

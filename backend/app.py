@@ -128,10 +128,17 @@ def health_check():
     except Exception as e:
         logger.warning(f"Health check: DB ping failed - {e}")
 
-    # Check if AI model is loaded
+    # Check if ensemble AI models are loaded
     try:
-        from utils.preprocess import model
-        model_status = "loaded" if model is not None else "unavailable"
+        from utils.preprocess import models as ensemble_models
+        loaded = sum(1 for m in ensemble_models if m is not None)
+        total  = 3  # DenseNet-121, EfficientNet-B4, ResNet-50
+        if loaded == total:
+            model_status = f"ensemble loaded ({loaded}/{total})"
+        elif loaded > 0:
+            model_status = f"partial ensemble ({loaded}/{total})"
+        else:
+            model_status = "unavailable"
     except Exception:
         model_status = "error"
 
