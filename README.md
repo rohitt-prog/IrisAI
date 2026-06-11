@@ -17,6 +17,8 @@
 | Feature | Details |
 |---|---|
 | 🩺 **5 Conditions Detected** | Cataract, Diabetic Retinopathy, Glaucoma, Keratoconus, Normal |
+| 📤 **20 MB Upload Limit** | Maximum image file size enforced server-side |
+| 🛡️ **Global Rate Limiting** | 200 requests/day · 50 requests/hour per IP (stricter limits on auth & predict endpoints) |
 | 🧠 **3-Model Ensemble** | DenseNet-121 (95.86%) + EfficientNet-B4 (95.30%) + ResNet-50 (95.09%) — weighted average |
 | ⚡ **Instant AI Analysis** | Deep learning ensemble classification with confidence score + per-class probability breakdown |
 | 🤖 **Generative AI Explanations** | Google Gemini explains each result in clear, patient-friendly language |
@@ -26,7 +28,6 @@
 | 📋 **Scan History** | Per-user history of all past screenings with analytics charts stored in MongoDB |
 | 🔐 **JWT Auth** | Secure user registration & login with bcrypt password hashing |
 | 🌐 **Anonymous Mode** | Run a screening without an account (results still saved) |
-| 🛡️ **Rate Limiting** | Flask-Limiter protects auth and prediction endpoints from abuse |
 | 🗄️ **DB Indexes** | Optimized MongoDB queries on users, history, and token logs |
 
 ---
@@ -44,6 +45,8 @@ projectDeep/
 │   ├── requirements.txt      # Python dependencies
 │   ├── .env.example          # Environment variable template (with docs)
 │   ├── Procfile              # Gunicorn config (for deployment)
+│   ├── debug_model.py        # Standalone script to verify model loading & inference
+│   ├── gcloud-key.json       # Google Cloud Service Account key (NOT committed — add to .gitignore)
 │   ├── model/
 │   │   ├── DenseNet-121_best.pth      # Trained DenseNet-121 (val acc: 95.86%)
 │   │   ├── EfficientNet-B4_best.pth   # Trained EfficientNet-B4 (val acc: 95.30%)
@@ -115,7 +118,7 @@ projectDeep/
 The easiest way to run the entire stack (Frontend, Backend, and MongoDB) is using Docker:
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/<your-username>/<your-repo-name>.git
 cd projectDeep
 cp backend/.env.example backend/.env
 # ⚠️ Edit backend/.env to add your GEMINI_API_KEY and generate a secure JWT_SECRET_KEY!
@@ -134,7 +137,7 @@ docker compose up --build
 If you'd rather run the servers manually:
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/<your-username>/<your-repo-name>.git
 cd projectDeep
 ```
 
@@ -221,6 +224,15 @@ IrisAI features a sophisticated voice-to-voice pipeline that allows users to int
 
 **Supported Languages:** English, Hindi, Spanish, French, German, Arabic, Chinese, Portuguese, Japanese, Korean, and Russian.
 
+### Voice Feature Setup
+> ⚠️ Voice requires a **Google Cloud Service Account** JSON key with the **Cloud Speech-to-Text** and **Cloud Text-to-Speech** APIs enabled.
+
+1. Go to [console.cloud.google.com](https://console.cloud.google.com/)
+2. Create a Service Account and assign roles: **Cloud Speech-to-Text User** + **Cloud Text-to-Speech User**
+3. Download the JSON key and save it as `backend/gcloud-key.json`
+4. Set `GOOGLE_APPLICATION_CREDENTIALS=/absolute/path/to/backend/gcloud-key.json` in `backend/.env`
+5. **⚠️ Never commit `gcloud-key.json` to git** — ensure it is listed in `backend/.gitignore`
+
 ---
 
 ## 🤖 AI Model Integration
@@ -281,20 +293,24 @@ All endpoints are prefixed with `/api`.
 - **Flask** — REST API framework
 - **PyTorch** — Deep learning model inference
 - **timm** — Model architectures: DenseNet-121, EfficientNet-B4, ResNet-50 (weighted ensemble)
-- **Google Gemini** (`google-genai`) — AI explanations and chat (with LRU caching)
+- **Google Gemini** (`google-generativeai`) — AI explanations and chat (with LRU caching)
+- **Google Cloud Speech-to-Text & Text-to-Speech** — Multilingual voice pipeline
 - **MongoDB + PyMongo** — Database for users & scan history
 - **Flask-JWT-Extended** — JWT authentication
-- **Flask-Limiter** — Rate limiting for auth & prediction endpoints
-- **ReportLab + qrcode** — PDF report generation
+- **Flask-Limiter** — Rate limiting: `200/day`, `50/hour` globally; stricter on `/auth` and `/predict`
+- **ReportLab + qrcode** — PDF report generation with embedded QR codes
 - **bcrypt** — Password hashing
 - **Gunicorn** — Production WSGI server
+- **certifi** — SSL certificate bundle for secure MongoDB Atlas connections
 
 ### Frontend
-- **React 18** + **Vite** — Modern SPA framework
-- **React Router v6** — Client-side routing
+- **React 19** + **Vite** — Modern SPA framework
+- **React Router v7** — Client-side routing
 - **Recharts** — Analytics bar & pie charts
 - **Axios** — HTTP client
-- **Vanilla CSS** — Custom design system with glassmorphism & dark mode
+- **jwt-decode** — Client-side JWT token decoding
+- **react-icons** — Icon library
+- **Tailwind CSS v4** — Utility-first CSS (alongside custom design system with glassmorphism & dark mode)
 - **Space Grotesk** — Premium typography (Google Fonts)
 
 ---
@@ -336,7 +352,7 @@ The `Procfile` is configured for Gunicorn:
 ```
 web: gunicorn app:app
 ```
-Set all environment variables in your hosting dashboard.
+Set all environment variables (`JWT_SECRET_KEY`, `MONGO_URI`, `GEMINI_API_KEY`, `GOOGLE_APPLICATION_CREDENTIALS`) in your hosting dashboard.
 
 ### Frontend (e.g. Vercel / Netlify)
 ```bash
@@ -344,6 +360,8 @@ cd frontend
 npm run build        # Outputs to frontend/dist/
 ```
 Update `frontend/src/config.js` to point to your deployed backend URL.
+
+> 💡 **Vercel users:** A `vercel.json` is already included in the `frontend/` directory. It configures SPA routing so that direct URL access (e.g. `/result`, `/chat`) works correctly without 404 errors. No extra configuration needed.
 
 ---
 
