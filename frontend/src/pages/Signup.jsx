@@ -32,8 +32,11 @@ const Signup = () => {
   const handleSignup = async (e) => {
     e.preventDefault();
     setError('');
+    // Validate first (before showing the loading spinner)
     if (!name.trim()) { setError('Please enter your full name.'); return; }
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
+    if (!/\d/.test(password)) { setError('Password must contain at least one number.'); return; }
+    if (!/[a-zA-Z]/.test(password)) { setError('Password must contain at least one letter.'); return; }
     setLoading(true);
     try {
       await axios.post(`${API_URL}/auth/signup`, { name: name.trim(), email, password });

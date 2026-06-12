@@ -237,8 +237,8 @@ const Navbar = () => {
             {/* Mobile menu button */}
             <button
               onClick={() => setMobileOpen(o => !o)}
+              className="show-mobile"
               style={{
-                display: 'none',
                 background: 'rgba(255,255,255,0.04)',
                 border: '1px solid rgba(255,255,255,0.08)',
                 borderRadius: '0.625rem',
@@ -247,7 +247,6 @@ const Navbar = () => {
                 color: 'var(--text-secondary)',
                 fontSize: '1.2rem',
                 lineHeight: 1,
-                '@media (max-width: 768px)': { display: 'flex' },
               }}
             >
               {mobileOpen ? '✕' : '☰'}

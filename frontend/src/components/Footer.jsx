@@ -88,7 +88,7 @@ const Footer = () => {
             <div style={{ display: 'flex', gap: '0.625rem', flexWrap: 'wrap' }}>
               {[
                 { label: '94.2% Accuracy', color: 'rgba(0,229,255,0.12)', border: 'rgba(0,229,255,0.2)', text: 'var(--iris-300)' },
-                { label: '6 Conditions', color: 'rgba(167,139,250,0.12)', border: 'rgba(167,139,250,0.2)', text: '#c4b5fd' },
+                { label: '5 Conditions', color: 'rgba(167,139,250,0.12)', border: 'rgba(167,139,250,0.2)', text: '#c4b5fd' },
                 { label: '<3s Results', color: 'rgba(251,191,36,0.12)', border: 'rgba(251,191,36,0.2)', text: '#fcd34d' },
               ].map(s => (
                 <span key={s.label} style={{

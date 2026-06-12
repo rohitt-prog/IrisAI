@@ -125,13 +125,8 @@ def predict():
     }
     db.history.insert_one(report_data)
 
-    # ── Clean up uploaded file (path is saved in DB; file not needed on disk) ──
-    if os.path.exists(filepath):
-        try:
-            os.remove(filepath)
-            report_data['image_path'] = None  # Don't expose deleted path in response
-        except Exception as cleanup_err:
-            logger.warning(f"Failed to delete upload after scan: {cleanup_err}")
+    # ── Keep uploaded file on disk so it can be embedded in PDF reports ─────
+    # (The image_path stored in DB is used by pdf_generator.py when downloading reports)
 
     # ── Build response ───────────────────────────────────────────────────────
     report_data.pop('_id', None)

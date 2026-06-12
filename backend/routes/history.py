@@ -44,13 +44,19 @@ def delete_record(report_id):
 
     # Delete associated files (original image, pdf report, and qr code)
     image_path = record.get('image_path')
-    if image_path and os.path.exists(image_path):
-        try:
-            os.remove(image_path)
-        except Exception as e:
-            logger.warning(f"Failed to delete image file: {e}")
+    if image_path:
+        # Resolve relative paths against the backend root (same logic as pdf_generator)
+        if not os.path.isabs(image_path):
+            backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            image_path = os.path.join(backend_dir, image_path)
+        if os.path.exists(image_path):
+            try:
+                os.remove(image_path)
+            except Exception as e:
+                logger.warning(f"Failed to delete image file: {e}")
 
-    reports_dir = os.path.join('uploads', 'reports')
+    backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    reports_dir = os.path.join(backend_dir, 'uploads', 'reports')
     pdf_path = os.path.join(reports_dir, f"{report_id}.pdf")
     qr_path = os.path.join(reports_dir, f"qr_{report_id}.png")
 

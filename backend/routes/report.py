@@ -37,7 +37,13 @@ def download_report():
         except Exception:
             pass  # Invalid ObjectId — keep default "Guest User"
 
-    pdf_path = create_pdf_report(report_data, user_name)
+    try:
+        pdf_path = create_pdf_report(report_data, user_name)
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error(f"PDF generation error: {e}")
+        return jsonify({"message": "Failed to generate PDF"}), 500
+
     if not pdf_path or not os.path.exists(pdf_path):
         return jsonify({"message": "Failed to generate PDF"}), 500
         

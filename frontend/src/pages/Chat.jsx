@@ -82,9 +82,13 @@ const MessageBubble = ({ msg }) => {
           border: '2px solid rgba(59,130,246,0.4)',
         }}>
           {(() => {
-            const u = localStorage.getItem('user');
-            const name = u ? JSON.parse(u).name : '';
-            return name ? name[0].toUpperCase() : '👤';
+            try {
+              const u = localStorage.getItem('user');
+              const name = u ? JSON.parse(u).name : '';
+              return name ? name[0].toUpperCase() : '👤';
+            } catch {
+              return '👤';
+            }
           })()}
         </div>
       )}

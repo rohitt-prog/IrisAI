@@ -123,7 +123,8 @@ const StatCard = ({ stat, delay }) => {
 
 const Dashboard = () => {
   const userStr = localStorage.getItem('user');
-  const user = userStr ? JSON.parse(userStr) : null;
+  let user = null;
+  try { user = userStr ? JSON.parse(userStr) : null; } catch { user = null; }
   const { tokens } = useTokens();
 
   const tokenColor = tokens === null ? '#7dd3fc'

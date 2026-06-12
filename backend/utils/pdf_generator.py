@@ -57,12 +57,22 @@ def create_pdf_report(data, user_name):
     c.setStrokeColor(colors.HexColor('#cbd5e1'))
     c.rect(40, height - 370, 230, 155, fill=False, stroke=True)
     img_path = data.get('image_path')
+    # Resolve relative paths against the backend directory (parent of utils/)
+    if img_path and not os.path.isabs(img_path):
+        backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        img_path = os.path.join(backend_dir, img_path)
     if img_path and os.path.exists(img_path):
         c.drawImage(img_path, 45, height - 365, width=220, height=145, preserveAspectRatio=True)
     else:
+        c.setFillColor(colors.HexColor('#f1f5f9'))
+        c.rect(40, height - 370, 230, 155, fill=True, stroke=False)
+        c.setStrokeColor(colors.HexColor('#cbd5e1'))
+        c.rect(40, height - 370, 230, 155, fill=False, stroke=True)
         c.setFillColor(colors.HexColor('#94a3b8'))
-        c.setFont("Helvetica-Oblique", 10)
-        c.drawString(100, height - 290, "Image not available")
+        c.setFont("Helvetica-Oblique", 11)
+        c.drawCentredString(155, height - 285, "🖼  Image not available")
+        c.setFont("Helvetica", 9)
+        c.drawCentredString(155, height - 300, "(image was not retained at scan time)")
         
     # Prediction Box
     prediction = data.get('prediction', 'Unknown')
@@ -173,4 +183,12 @@ def create_pdf_report(data, user_name):
     c.drawRightString(width - 40, 50, f"Report ID: {report_id}")
     
     c.save()
+
+    # Clean up the temporary QR image file — it's now embedded in the PDF
+    try:
+        if os.path.exists(qr_path):
+            os.remove(qr_path)
+    except Exception:
+        pass  # Non-critical cleanup failure
+
     return pdf_path

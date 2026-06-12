@@ -1,10 +1,10 @@
 {
   "class_names": [
+    "Normal",
+    "Glaucoma",
     "Cataract",
     "Diabetic_Retinopathy",
-    "Glaucoma",
-    "Keratoconus",
-    "Normal"
+    "Keratoconus"
   ],
   "num_classes": 5,
   "models": {

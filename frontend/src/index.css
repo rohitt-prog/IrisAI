@@ -854,6 +854,12 @@ code, pre {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* alias used in inline styles (animation: 'fadeIn 0.2s ease') */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
 @keyframes fade-in-down {
   from { opacity: 0; transform: translateY(-16px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -1068,6 +1074,12 @@ code, pre {
   .glass-card:hover { transform: none; }
   .stat-card:hover  { transform: none; }
   .btn-primary:hover { transform: none; }
+}
+
+/* show-mobile: hidden by default, flex on small screens */
+.show-mobile { display: none; }
+@media (max-width: 768px) {
+  .show-mobile { display: flex !important; }
 }
 
 /* ════════════════════════════════════════════════════════

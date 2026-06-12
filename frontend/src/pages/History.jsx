@@ -196,6 +196,27 @@ const History = () => {
     }
   };
 
+  const handleDownloadPDF = async (reportId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API_URL}/report/download-report?id=${reportId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Eye_Health_Report_${reportId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('PDF download failed:', err);
+      alert('Failed to download PDF. Please try again.');
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '50vh', flexDirection: 'column', gap: '1rem' }}>
@@ -421,13 +442,13 @@ const History = () => {
                           <span className={`badge ${badgeCls}`}>{pct}%</span>
                         </td>
                         <td style={{ textAlign: 'center' }}>
-                          <a
-                            href={`${API_URL}/report/download-report?id=${item.report_id}`}
+                          <button
+                            onClick={() => handleDownloadPDF(item.report_id)}
                             className="btn-secondary"
-                            style={{ padding: '0.375rem 0.875rem', fontSize: '0.8rem', gap: '4px' }}
+                            style={{ padding: '0.375rem 0.875rem', fontSize: '0.8rem', gap: '4px', cursor: 'pointer' }}
                           >
                             📄 PDF
-                          </a>
+                          </button>
                         </td>
                         <td style={{ textAlign: 'center' }}>
                           <TrashButton onClick={() => setDeleteTarget(item.report_id)} />

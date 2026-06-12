@@ -81,7 +81,7 @@ const PaymentPending = () => {
           border: '1px solid rgba(255,255,255,0.06)',
           lineHeight: 1.6,
         }}>
-          We'll notify you as soon as payments are live. Your existing 15 starter tokens are available in the meantime.
+          We'll notify you as soon as payments are live. Your existing 10 starter tokens are available in the meantime.
         </p>
 
         <div style={{ display: 'flex', gap: '0.75rem', width: '100%' }}>

@@ -188,8 +188,8 @@ def predict_disease(image_path):
     return prediction, confidence, probabilities
 
 # Back-compat: expose a single `model` variable for health-check in app.py
-# This is resolved lazily so it reflects the actual loaded state
+# Set AFTER the loading loop so it reflects the actual loaded state
 def _get_first_model():
-    return models[0] if models else None
+    return next((m for m in models if m is not None), None)
 
 model = _get_first_model()
