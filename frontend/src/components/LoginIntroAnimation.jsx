@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 
 /**
  * LoginIntroAnimation — Premium Holographic Iris Scanner
@@ -63,6 +63,18 @@ export default function LoginIntroAnimation({ onComplete }) {
   const isActive = phase === 2;
   const isGone   = phase >= 3;
 
+  // Memoize star positions so Math.random() isn't called on every re-render
+  const stars = useMemo(
+    () => Array.from({ length: 60 }, (_, i) => ({
+      key: i,
+      x: `${Math.random() * 100}%`,
+      y: `${Math.random() * 100}%`,
+      d: `${(Math.random() * 3).toFixed(2)}s`,
+      s: `${(0.5 + Math.random() * 2).toFixed(1)}px`,
+    })),
+    [] // computed once on mount
+  );
+
   return (
     <div className="holo-overlay">
 
@@ -71,12 +83,12 @@ export default function LoginIntroAnimation({ onComplete }) {
 
       {/* ── Starfield dots ── */}
       <div className="holo-stars" aria-hidden="true">
-        {Array.from({ length: 60 }).map((_, i) => (
-          <div key={i} className="holo-star" style={{
-            '--x': `${Math.random() * 100}%`,
-            '--y': `${Math.random() * 100}%`,
-            '--d': `${(Math.random() * 3).toFixed(2)}s`,
-            '--s': `${(0.5 + Math.random() * 2).toFixed(1)}px`,
+        {stars.map(star => (
+          <div key={star.key} className="holo-star" style={{
+            '--x': star.x,
+            '--y': star.y,
+            '--d': star.d,
+            '--s': star.s,
           }} />
         ))}
       </div>

@@ -36,7 +36,7 @@ class Config:
 
         if not Config.JWT_SECRET_KEY:
             errors.append("JWT_SECRET_KEY must be set in .env")
-        elif Config.JWT_SECRET_KEY == "super-secret-key-12345":
+        elif Config.JWT_SECRET_KEY in {"super-secret-key-12345", "change-this-to-a-long-random-string"}:
             errors.append("JWT_SECRET_KEY cannot be the default value in production")
 
         if not Config.GEMINI_API_KEY or Config.GEMINI_API_KEY == "your_gemini_api_key_here":

@@ -1,17 +1,29 @@
+"""
+routes/chat.py
+──────────────
+POST /api/chat
+  Accepts a JSON body with a 'question' field.
+  Returns an AI-generated answer from Gemini.
+"""
+
+import logging
 from flask import Blueprint, request, jsonify
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from utils.llm_explainer import chat_assistant
+
+logger = logging.getLogger(__name__)
 
 chat_bp = Blueprint('chat', __name__)
 
-# Separate limiter for chat — Gemini API calls are expensive
-_chat_limiter = Limiter(key_func=get_remote_address)
 
 @chat_bp.route('/chat', methods=['POST'])
-@_chat_limiter.limit("20 per hour")
 def chat():
-    data = request.get_json()
+    """Answer eye-health questions via Gemini AI.
+
+    Rate limiting is handled by the global Flask-Limiter configured in app.py
+    (200 req/day, 50 req/hour per IP). No additional per-route limiter is needed
+    to avoid the standalone-Limiter bug in Flask-Limiter 3.x.
+    """
+    data = request.get_json(silent=True)
     if not data or 'question' not in data:
         return jsonify({"message": "No question provided"}), 400
 
@@ -19,8 +31,10 @@ def chat():
     if not question or not question.strip():
         return jsonify({"message": "Question cannot be empty"}), 400
 
-    # Limit question length to avoid very long Gemini prompts
+    # Trim to avoid very long Gemini prompts
     question = question.strip()[:1000]
+
+    logger.info(f"Chat request: '{question[:80]}...' " if len(question) > 80 else f"Chat request: '{question}'")
     answer = chat_assistant(question)
-    
+
     return jsonify({"answer": answer}), 200

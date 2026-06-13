@@ -254,7 +254,7 @@ const History = () => {
       <div>
         <span className="badge badge-blue" style={{ marginBottom: '0.75rem', display: 'inline-flex' }}>📋 Medical Records</span>
         <h1 style={{ fontSize: '2rem', fontWeight: 800, fontFamily: 'Space Grotesk, sans-serif', lineHeight: 1.2 }}>
-          Patient History <span className="gradient-text">&amp; Analytics</span>
+          Patient History <span className="gradient-text">& Analytics</span>
         </h1>
       </div>
 
@@ -426,7 +426,7 @@ const History = () => {
                     const badgeCls = isHigh ? 'badge-success' : isMed ? 'badge-warning' : 'badge-danger';
                     const color = conditionColors[item.prediction] || 'var(--text-primary)';
                     return (
-                      <tr key={idx} style={{ transition: 'opacity 0.2s' }}>
+                      <tr key={item.report_id} style={{ transition: 'opacity 0.2s' }}>
                         <td style={{ color: 'var(--text-secondary)' }}>
                           {new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </td>

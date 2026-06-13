@@ -67,23 +67,6 @@ const howItWorks = [
   { num: 4, icon: '📄', title: 'Download Report',   desc: 'Get a professional PDF with embedded QR code — ready to share with your doctor.' },
 ];
 
-/* ── Animated counter hook ── */
-const useCountUp = (target, duration = 1200) => {
-  const [count, setCount] = useState(0);
-  useEffect(() => {
-    const numeric = parseFloat(target.replace(/[^0-9.]/g, ''));
-    if (isNaN(numeric)) { setCount(target); return; }
-    let start = 0;
-    const step = numeric / (duration / 16);
-    const timer = setInterval(() => {
-      start += step;
-      if (start >= numeric) { setCount(target); clearInterval(timer); }
-      else setCount((target.includes('%') ? start.toFixed(1) + '%' : Math.floor(start).toString()));
-    }, 16);
-    return () => clearInterval(timer);
-  }, [target, duration]);
-  return count;
-};
 
 const StatCard = ({ stat, delay }) => {
   const [visible, setVisible] = useState(false);

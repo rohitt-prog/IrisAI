@@ -29,8 +29,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Ensure upload folder exists at import time (works with gunicorn, not just __main__)
+# Ensure upload folders exist at import time (works with gunicorn, not just __main__)
 os.makedirs('uploads', exist_ok=True)
+os.makedirs(os.path.join('uploads', 'tmp'), exist_ok=True)  # Temp dir for AI model inference
 
 app = Flask(__name__)
 # Enable CORS for frontend on any port/origin
@@ -38,9 +39,10 @@ CORS(app)
 
 # ── Validate JWT secret at startup ──────────────────────────────────────────
 JWT_SECRET = os.getenv("JWT_SECRET_KEY")
-if not JWT_SECRET or JWT_SECRET == "super-secret-key-12345":
+_INSECURE_DEFAULTS = {"super-secret-key-12345", "change-this-to-a-long-random-string"}
+if not JWT_SECRET or JWT_SECRET in _INSECURE_DEFAULTS:
     raise ValueError(
-        "❌ FATAL: JWT_SECRET_KEY must be set in .env file.\n"
+        "❌ FATAL: JWT_SECRET_KEY must be set to a unique secret in .env file.\n"
         "   Generate a secure key with: python -c \"import secrets; print(secrets.token_hex(32))\""
     )
 
@@ -163,12 +165,19 @@ def health_check():
 # ── Flask CLI cleanup command ────────────────────────────────────────────────
 @app.cli.command()
 def cleanup():
-    """Run file cleanup for old uploads and orphaned reports"""
-    from utils.cleanup import cleanup_old_files, cleanup_orphaned_reports
+    """Run file cleanup: old disk uploads, orphaned disk reports, orphaned GridFS images, tmp files"""
+    from utils.cleanup import (
+        cleanup_old_files,
+        cleanup_orphaned_reports,
+        cleanup_orphaned_gridfs_images,
+        cleanup_tmp_folder,
+    )
 
     print("Running file cleanup...")
     cleanup_old_files(days=30)
     cleanup_orphaned_reports()
+    cleanup_orphaned_gridfs_images()
+    cleanup_tmp_folder()
     print("Cleanup complete!")
 
 

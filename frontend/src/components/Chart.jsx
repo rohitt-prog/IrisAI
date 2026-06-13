@@ -22,6 +22,8 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 const Chart = ({ probabilities }) => {
+  if (!probabilities || typeof probabilities !== 'object') return null;
+
   const data = Object.keys(probabilities).map(key => ({
     name: key,
     value: parseFloat((probabilities[key] * 100).toFixed(1)),

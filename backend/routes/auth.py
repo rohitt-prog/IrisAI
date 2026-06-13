@@ -27,7 +27,9 @@ def validate_password(password):
 
 @auth_bp.route('/signup', methods=['POST'])
 def signup():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"message": "Request body must be JSON"}), 400
     email = data.get('email', '').strip().lower()
     password = data.get('password', '')
     name = data.get('name', '').strip()
@@ -72,7 +74,9 @@ def signup():
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"message": "Request body must be JSON"}), 400
     email = data.get('email', '').strip().lower()
     password = data.get('password', '')
 
