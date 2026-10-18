@@ -247,6 +247,9 @@ The system uses a **3-model weighted ensemble** for robust, high-accuracy predic
 | EfficientNet-B4 | `efficientnet_b4` (timm) | **95.30%** | 0.3322 | `EfficientNet-B4_best.pth` |
 | ResNet-50 | `resnet50` (timm) | **95.09%** | 0.3317 | `ResNet-50_best.pth` |
 
+
+For models You can download from my kaggle dataset : `https://www.kaggle.com/datasets/rrohit1289/eye-disease-models`
+
 **Ensemble strategy:** Weighted average of softmax probabilities, with each model's weight proportional to its validation accuracy. The model with the highest accuracy contributes the most to the final prediction.
 
 **Detected conditions (5 classes):**
